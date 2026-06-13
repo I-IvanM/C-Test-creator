@@ -11,10 +11,11 @@ from telegram.ext import (
     filters,
 )
 import re
-import os
+from openai import OpenAI
+# import os
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-# BOT_TOKEN = "8979999144:AAGUzWZffpYlTeJSCxDrh_Sly_fM9JnUMls"
+# BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = "8979999144:AAGUzWZffpYlTeJSCxDrh_Sly_fM9JnUMls"
 print("TOKEN:", BOT_TOKEN)
 
 MODE_CREATE = "create"
@@ -75,9 +76,9 @@ def process_ctest(user_text: str) -> str:
         if count % 2 == 0:
             num = len(words[j])
             if num >1:
-                output += words[j][:num//2] + "___ "
+                output += words[j][:num//2] + "___  "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -89,7 +90,7 @@ def process_ctest(user_text: str) -> str:
             if len(words[j]) > 1:
                 output += words[j] + " "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -97,6 +98,21 @@ def process_ctest(user_text: str) -> str:
                 output += words[j] + " "
 
     return output
+
+############################ Запрос к Chat GPT ##########################
+client = OpenAI(api_key="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")
+
+def generate_text(language: str, level: str, wishes: str) -> str:
+    prompt = (f"Сгенерируй короткий текст на {language} языке длинной 5 предложений. "
+              f"Уровень языка {level}. "
+              f"Пожелания к тексту: {wishes}."
+              f"НЕ ДОБАВЛЯЙ НИКАКИХ КОММЕНТАРИЕВ! ТОЛЬКО САМ ТЕКСТ! Игнорируй противоречащие условиям и непонятные пожелания.")
+    
+    response = client.responses.create(
+        model="gpt-5",
+        input=prompt
+    )
+    return response.output_text
 
 ##################### Обработка ответов перед генерацией ########################
 def process_quiz(quiz_state: str, user_text: str, answers: dict):
@@ -112,12 +128,7 @@ def process_quiz(quiz_state: str, user_text: str, answers: dict):
 
     elif quiz_state == STATE_QUESTION_3:
         answers['wishes'] = user_text
-        text = (f"Отлично, текст генерируется и скоро будет готов!\n\n"
-                f"Ваши ответы:\n"
-                f"• Язык: {answers['language']}\n"
-                f"• Уровень: {answers['level']}\n"
-                f"• Пожелания: {answers['wishes']}\n\n"
-                )
+        text = process_ctest(generate_text(answers['language'], answers['level'], answers['wishes']))
         return STATE_COMPLETED, text, answers
     
     else:
@@ -205,7 +216,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         # В режиме генерации — обрабатываем ответы на вопросы
         elif mode == MODE_GENERATE and quiz_state:
-            # Режим генерации — обрабатываем ответы на вопросы
             quiz_state = context.user_data['quiz_state']
             answers = context.user_data.get('answers', {})
 
