@@ -215,7 +215,7 @@ async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TY
 # START
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = ("C-Tester \n"
-                    "Этот бот может превратить ваш текст в C-Test или сгенерировать новый С-Test специально для вас!"
+                    "Этот бот может превратить Ваш текст в C-Test или сгенерировать новый С-Test специально для Вас! \n"
                     "Если у Вас есть вопросы, нажмите кнопку \"справка\" или введите команду /help.")
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
