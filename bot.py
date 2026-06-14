@@ -15,13 +15,12 @@ from telegram.ext import (
 from telegram.constants import ChatAction
 import re
 from openai import AsyncOpenAI
-# import os
+import os
 
 ################## ПЕРЕМЕННЫЕ ##################
 
-# BOT_TOKEN = os.getenv("BOT_TOKEN")
-BOT_TOKEN = "8979999144:AAGUzWZffpYlTeJSCxDrh_Sly_fM9JnUMls"
-print("TOKEN:", BOT_TOKEN)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ID поддержки, куда перенаправлять запросы
 admin = "@I_IvanM"
@@ -190,8 +189,7 @@ def process_marck_answers(generated_text: str):
     return output
 
 # Запрос к Chat GPT по API
-client = AsyncOpenAI(api_key="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")
-
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 async def generate_text(language: str, level: str, wishes: str) -> str:
     prompt = (f"Сгенерируй короткий текст на {language} языке длинной 5 предложений. "
               f"Уровень языка {level}. "
