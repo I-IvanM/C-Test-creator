@@ -44,7 +44,7 @@ STATE_COMPLETED = "completed"
 def get_main_keyboard():
     keyboard = [
         [KeyboardButton("текст в C-Test"), KeyboardButton("Генерировать")],
-        [KeyboardButton("Справка"), KeyboardButton("Подписка ℹnfo")]
+        [KeyboardButton("Справка"), KeyboardButton("ℹ Подписка info")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -232,6 +232,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY,
         username TEXT,
+        first_name TEXT
         registered TEXT,
         last_free_refresh TEXT,
         subscription_expires_at TEXT,
@@ -245,7 +246,7 @@ def init_db():
     conn.close()
 
 # БАЗА ДАННЫ, регистрация пользователя
-def register_user(user_id: int, username: str, first_Name: str):
+def register_user(user_id: int, username: str, first_name: str):
     conn = sqlite3.connect("users.db")
     cursor = conn.cursor()
 
@@ -265,7 +266,7 @@ def register_user(user_id: int, username: str, first_Name: str):
     """, (
         user_id,
         username,
-        first_Name,
+        first_name,
         datetime.now().isoformat(timespec="seconds"),
         datetime.now().isoformat(timespec="seconds")
     ))
@@ -294,7 +295,7 @@ def get_user(user_id: int):
     return {
         "user_id": row[0],
         "username": row[1],
-        "first_Name": row[2],
+        "first_name": row[2],
         "registered": row[3],
         "last_free_refresh": row [4],
         "subscription_expires_at": row[5],
@@ -414,13 +415,13 @@ def check_subscription_expired(user_id: int):
         return
 
     expires = datetime.fromisoformat(user['subscription_expires_at'])
-    creations = user['crestions']
-    generations = user['generations']
+    creations = user['crestions_left']
+    generations = user['generations_left']
 
     if datetime.now() >= expires:
         if creations > 3:
             set_creations(user_id, 3)
-        if creations > 3:
+        if generations > 3:
             set_generations(user_id, 3)
 
 
@@ -476,7 +477,7 @@ def refresh_user(user_id: int):
     check_free_month(user_id)
     creations = get_user(user_id)['creations_left']
     generations = get_user(user_id)['generations_left']
-    if get_user(user_id)["is_VIP"] == 1:
+    if get_user(user_id)["is_VIP"] == True:
         set_creations(user_id, 57)
         set_generations(user_id, 57)
 
@@ -583,7 +584,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Функция ещё не готова")
 
-    context.user_data.clear
+    context.user_data.clear()
     await start_command(update, context)
 
 
@@ -628,10 +629,10 @@ async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYP
         "• срок действия 30 дней\n\n"
         "По истечении 30 дней все оставшиеся генерации с преобразования сгорают.\n"
         "Оплата производится при помощи Telegram Stars:\n"
-        "1 подписка: 200 звёзд ≈ 2-3 €"
+        "1 подписка: 100 звёзд ≈ 2-3 €"
     )
 
-    await update.message.reply_text(text)
+    await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
 
 # ПОДПИСКА, выдать /give_sub
 async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -722,9 +723,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     elif user_text == "Купить подписку":
         await give_sub_command(update, context)
 
-    elif user_text == "Подписка":
+    elif user_text == "ℹ Подписка info":
         await subscription_command (update, context)
-        await update.message.reply_text(reply_markup=get_subscription_keyboard())
 
     # Обработка свободного текста
     else:
