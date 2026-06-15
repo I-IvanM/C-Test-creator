@@ -91,8 +91,6 @@ def get_subscription_keyboard():
 
 # превращение в c-test
 def process_ctest(user_text: str) -> str:
-    
-    print(user_text)
 
     output = ""
     words = None
@@ -232,7 +230,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY,
         username TEXT,
-        first_name TEXT
+        first_name TEXT,
         registered TEXT,
         last_free_refresh TEXT,
         subscription_expires_at TEXT,
@@ -254,7 +252,7 @@ def register_user(user_id: int, username: str, first_name: str):
         INSERT OR IGNORE INTO users (
             user_id,
             username,
-            first_Name,
+            first_name,
             registered,
             last_free_refresh,
             subscription_expires_at,
@@ -415,7 +413,7 @@ def check_subscription_expired(user_id: int):
         return
 
     expires = datetime.fromisoformat(user['subscription_expires_at'])
-    creations = user['crestions_left']
+    creations = user['creations_left']
     generations = user['generations_left']
 
     if datetime.now() >= expires:
@@ -475,11 +473,11 @@ def check_free_month(user_id: int):
 def refresh_user(user_id: int):
     check_subscription_expired(user_id)
     check_free_month(user_id)
-    creations = get_user(user_id)['creations_left']
-    generations = get_user(user_id)['generations_left']
     if get_user(user_id)["is_VIP"] == True:
         set_creations(user_id, 57)
         set_generations(user_id, 57)
+    creations = get_user(user_id)['creations_left']
+    generations = get_user(user_id)['generations_left']
 
     return{'creations': creations, 'generations': generations}
 
@@ -573,7 +571,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/subscription – получиль информацию об условиях подписки\n"
         "/my_info – получить информацию о состоянии моей подписки\n"
         "/give_sub – Выдать себе подписку (пока на час, тестовая команда)\n"
-        "/reset_sub – Сбрасывает лимиты в 0 (тестовая)"
+        "/reset_sub – Сбрасывает лимиты в 0 (тестовая)\n"
+        "/user – Получить все данные о себе из базы данных\n"
 
         #"/clear – полностью очищает чат с ботом\n"
         #"/support – позволяет отправить запрос в тех. поддержку бота\n"
@@ -597,6 +596,11 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=get_menu_keyboard()
         )
     print("Функция ещё не готова, отправить сообщение на ", admin)
+
+# БАЗА ДАННЫХ, выдать всю информацию о пользователе /user
+async def user_comand(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = print_user(update.effective_user.id)
+    await update.message.reply_text(text)
 
 
 # ПОДПИСКА, выдача информации /my_info
@@ -681,6 +685,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Кнопка переключения в режим генерации
     elif user_text == "Генерировать":
+        if limits["generations"] <= 0:
+                await update.message.reply_text(
+                "Лимит генераций исчерпан, купите подписку!"
+                )
+                return
+        
         context.user_data['mode'] = MODE_GENERATE
         context.user_data['quiz_state'] = STATE_QUESTION_1
         context.user_data['answers'] = {}
@@ -748,11 +758,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         # В режиме генерации — обрабатываем ответы на вопросы
         elif mode == MODE_GENERATE and quiz_state:
-            if limits["generations"] <= 0:
-                await update.message.reply_text(
-                "Лимит генераций исчерпан, купите подписку!"
-                )
-                return
             answers = context.user_data.get('answers', {})
             context.user_data["messages"].append(update.message.message_id)
 
@@ -850,6 +855,10 @@ def main() -> None:
 
     app.add_handler(
         CommandHandler("support", support_command)
+    )
+
+    app.add_handler(
+        CommandHandler("user", user_comand)
     )
 
     app.add_handler(
