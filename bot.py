@@ -15,6 +15,9 @@ from telegram.ext import (
 from telegram.constants import ChatAction
 import re
 from openai import AsyncOpenAI
+import sqlite3
+from datetime import datetime, timedelta
+
 import os
 
 ################## ПЕРЕМЕННЫЕ ##################
@@ -41,7 +44,7 @@ STATE_COMPLETED = "completed"
 def get_main_keyboard():
     keyboard = [
         [KeyboardButton("текст в C-Test"), KeyboardButton("Генерировать")],
-        [KeyboardButton("Справка")]
+        [KeyboardButton("Справка"), KeyboardButton("Подписка ℹnfo")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -67,9 +70,19 @@ def get_menu_keyboard():
     keyboard = [[KeyboardButton("Вернуться в главное меню")]]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+# Смотреть ответы
 def get_answer_keyboard():
     keyboard = [
         [KeyboardButton("Смотреть ответы")],
+        [KeyboardButton("Вернуться в главное меню")]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+# Управление подпиской
+def get_subscription_keyboard():
+    keyboard = [
+        [KeyboardButton("Моя подписка")],
+        [KeyboardButton("Купить подписку")],
         [KeyboardButton("Вернуться в главное меню")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -210,6 +223,323 @@ async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TY
                         message_id=i
                     )
 
+# БАЗА ДАННЫХ, илиниализация
+def init_db():
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        username TEXT,
+        registered TEXT,
+        last_free_refresh TEXT,
+        subscription_expires_at TEXT,
+        creations_left INTEGER DEFAULT 3,
+        generations_left INTEGER DEFAULT 2,
+        is_VIP INTEGER DEFAULT 0
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫ, регистрация пользователя
+def register_user(user_id: int, username: str, first_Name: str):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR IGNORE INTO users (
+            user_id,
+            username,
+            first_Name,
+            registered,
+            last_free_refresh,
+            subscription_expires_at,
+            creations_left,
+            generations_left,
+            is_VIP
+        )
+        VALUES (?, ?, ?, ?, ?, NULL, 3, 2, 0)
+    """, (
+        user_id,
+        username,
+        first_Name,
+        datetime.now().isoformat(timespec="seconds"),
+        datetime.now().isoformat(timespec="seconds")
+    ))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, вызов данных пользователя
+def get_user(user_id: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM users
+        WHERE user_id = ?
+    """, (user_id,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if row is None:
+        return None
+
+    return {
+        "user_id": row[0],
+        "username": row[1],
+        "first_Name": row[2],
+        "registered": row[3],
+        "last_free_refresh": row [4],
+        "subscription_expires_at": row[5],
+        "creations_left": row[6],
+        "generations_left": row[7],
+        "is_VIP": bool(row[8]),
+    }
+
+# БАЗА ДАННЫХ, напечатать пользователя
+def print_user(user_id: int) -> str:
+    user = get_user(user_id)
+
+    if user is None:
+        return "Пользователь не найден"
+
+    return (
+        f"ID: {user['user_id']}\n"
+        f"Username: @{user['username']}\n"
+        f"Имя: {user['first_name']}\n"
+        f"Дата регистрации: {user['registered']}\n"
+        f"Последнее обновление бесплатной {user['last_free_refresh']}\n"
+        f"Подписка до: {user['subscription_expires_at']}\n"
+        f"Преобразований осталось: {user['creations_left']}\n"
+        f"Генераций осталось: {user['generations_left']}\n"
+        f"VIP: {user['is_VIP']}"
+    )
+
+# БАЗА ДАННЫХ, Уменьшить кол-во оставшихся генераций
+def decrease_generation(user_id: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET generations_left = generations_left - 1
+        WHERE user_id = ?
+    """, (user_id,))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, уменьшить количество оставшихся конвертаций
+def decrease_creation(user_id: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET creations_left = creations_left - 1
+        WHERE user_id = ?
+    """, (user_id,))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, довавление генераций
+def add_generations(user_id: int, amount: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET generations_left = generations_left + ?
+        WHERE user_id = ?
+    """, (amount, user_id))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, добавление конвертаций
+def add_creations(user_id: int, amount: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET creations_left = creations_left + ?
+        WHERE user_id = ?
+    """, (amount, user_id))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, установка значения генераций
+def set_generations(user_id: int, amount: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET generations_left = ?
+        WHERE user_id = ?
+    """, (amount, user_id))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, установка значений конвертаций
+def set_creations(user_id: int, amount: int):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET creations_left = ?
+        WHERE user_id = ?
+    """, (amount, user_id))
+
+    conn.commit()
+    conn.close()
+
+# БАЗА ДАННЫХ, проверка, не истекла ли подписка
+def check_subscription_expired(user_id: int):
+    user = get_user(user_id)
+
+    if not user['subscription_expires_at']:
+        return
+
+    expires = datetime.fromisoformat(user['subscription_expires_at'])
+    creations = user['crestions']
+    generations = user['generations']
+
+    if datetime.now() >= expires:
+        if creations > 3:
+            set_creations(user_id, 3)
+        if creations > 3:
+            set_generations(user_id, 3)
+
+
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE users
+            SET subscription_expires_at = NULL
+            WHERE user_id = ?
+        """, (user_id,))
+
+        conn.commit()
+        conn.close()
+
+# БАЗА ДАННЫХ, проверка бесплатной подписки (мб надо пополнить месячную норму)
+def check_free_month(user_id: int):
+    user = get_user(user_id)
+
+    last_refresh = user["last_free_refresh"]
+
+    if not last_refresh:
+        return
+
+    last_refresh = datetime.fromisoformat(last_refresh)
+
+    if datetime.now() >= last_refresh + timedelta(days=30):
+
+        if user["generations_left"] < 3:
+            set_generations(user_id, 3)
+
+        if user["creations_left"] < 3:
+            set_creations(user_id, 3)
+
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE users
+            SET last_free_refresh = ?
+            WHERE user_id = ?
+        """, (
+            datetime.now().isoformat(timespec="seconds"),
+            user_id
+        ))
+
+        conn.commit()
+        conn.close()
+
+# БАЗА ДАННЫХ, все проверки сразу + кол-во преобразований и генераций + 
+def refresh_user(user_id: int):
+    check_subscription_expired(user_id)
+    check_free_month(user_id)
+    creations = get_user(user_id)['creations_left']
+    generations = get_user(user_id)['generations_left']
+    if get_user(user_id)["is_VIP"] == 1:
+        set_creations(user_id, 57)
+        set_generations(user_id, 57)
+
+    return{'creations': creations, 'generations': generations}
+
+# БАЗА ДАННЫХ, выдача подписки
+def give_subscription(user_id: int):
+
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT subscription_expires_at
+        FROM users
+        WHERE user_id = ?
+    """, (user_id,))
+
+    row = cursor.fetchone()
+
+    now = datetime.now()
+
+    if row and row[0]:
+        current_expire = datetime.fromisoformat(row[0])
+
+        if current_expire > now:
+            new_expire = current_expire + timedelta(hours=1)
+        else:
+            new_expire = now + timedelta(hours=1)
+    else:
+        new_expire = now + timedelta(hours=1)
+
+    cursor.execute("""
+        UPDATE users
+        SET subscription_expires_at = ?
+        WHERE user_id = ?
+    """, (
+        new_expire.isoformat(timespec="seconds"),
+        user_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_creations(user_id, 2)
+    add_generations(user_id, 2)
+
+# БАЗА ДАННЫХ, обнулить подписку
+def reset_subscription(user_id: int):
+
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET
+            subscription_expires_at = NULL,
+            creations_left = 0,
+            generations_left = 0
+        WHERE user_id = ?
+    """, (user_id,))
+
+    conn.commit()
+    conn.close()
 ######################### РАБОТА БОТА ######################### (обработчики входящих)
 
 # START
@@ -239,6 +569,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🫡 Полный список команд бота:\n"
         "/start – запускает бот заного\n"
         "/help – вызывает это сообщение\n"
+        "/subscription – получиль информацию об условиях подписки\n"
+        "/my_info – получить информацию о состоянии моей подписки\n"
+        "/give_sub – Выдать себе подписку (пока на час, тестовая команда)\n"
+        "/reset_sub – Сбрасывает лимиты в 0 (тестовая)"
+
         #"/clear – полностью очищает чат с ботом\n"
         #"/support – позволяет отправить запрос в тех. поддержку бота\n"
     )
@@ -263,11 +598,75 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Функция ещё не готова, отправить сообщение на ", admin)
 
 
+# ПОДПИСКА, выдача информации /my_info
+async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+
+    if user["subscription_expires_at"]:
+        status = f"активна до {user['subscription_expires_at']}"
+    else:
+        status = "не активна"
+
+    text = (
+        f"Подписка {status}\n\n"
+        f"Осталось преобразований: {user['creations_left']}\n"
+        f"Осталось генераций: {user['generations_left']}\n\n"
+    )
+
+    if user['is_VIP'] == 1:
+        text = (f"Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n {text}")
+
+    await update.message.reply_text(text)
+
+# ПОДПИСКА, рассказ о ней /subscription
+async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    text = (
+        "Подписка включает:\n\n"
+        "• 100 преобразований текста в C-Test\n"
+        "• 100 генераций новых C-Test\n"
+        "• срок действия 30 дней\n\n"
+        "По истечении 30 дней все оставшиеся генерации с преобразования сгорают.\n"
+        "Оплата производится при помощи Telegram Stars:\n"
+        "1 подписка: 200 звёзд ≈ 2-3 €"
+    )
+
+    await update.message.reply_text(text)
+
+# ПОДПИСКА, выдать /give_sub
+async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    give_subscription(update.effective_user.id)
+    user = get_user(update.effective_user.id)
+
+    await update.message.reply_text(
+        "🎉🎉🎉 Поздравляем! 🎉🎉🎉\n"
+        "Вы оформили подписку на C-Test creator бота!\n"
+        "📚 Мы желаем Вам хорошей подготовки и простых заданий на экзамене!\n\n"
+        f"Подписка активна до {user['subscription_expires_at']}"
+    )
+
+# ПОДПИСКА, обнулить /reset_sub
+async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    reset_subscription(update.effective_user.id)
+
+    await update.message.reply_text(
+        "Подписка сброшена."
+    )
+
 ########################## ОБРАБОТКА ВХОДЯЩИХ ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_text = update.message.text
     quiz_state = context.user_data.get('quiz_state')
     mode = context.user_data.get('mode', MODE_CREATE)
+
+    register_user(
+        update.effective_user.id,
+        update.effective_user.username or "–",
+        update.effective_user.first_name or "–"
+    )
+    limits = refresh_user(update.effective_user.id)
 
     # Кнопка переключения в режим "текст в C-Test"
     if user_text == "текст в C-Test":
@@ -317,13 +716,29 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         reply_markup=get_main_keyboard(),
         parse_mode="HTML")
 
+    elif user_text == "Моя подписка":
+        await my_info_command(update, context)
+
+    elif user_text == "Купить подписку":
+        await give_sub_command(update, context)
+
+    elif user_text == "Подписка":
+        await subscription_command (update, context)
+        await update.message.reply_text(reply_markup=get_subscription_keyboard())
+
     # Обработка свободного текста
     else:
         # В режиме "текст в C-Test" — обрабатываем текст
         if mode == MODE_CREATE:
+            if limits["creations"] <= 0:
+                await update.message.reply_text(
+                    "Лимит преобразований исчерпан, купите подписку!"
+                )
+                return
+            
             try:
                 output = process_ctest(user_text)
-
+                decrease_creation(update.effective_user.id)
                 await update.message.reply_text(output)
 
             except Exception as e:
@@ -333,6 +748,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         # В режиме генерации — обрабатываем ответы на вопросы
         elif mode == MODE_GENERATE and quiz_state:
+            if limits["generations"] <= 0:
+                await update.message.reply_text(
+                "Лимит генераций исчерпан, купите подписку!"
+                )
+                return
             answers = context.user_data.get('answers', {})
             context.user_data["messages"].append(update.message.message_id)
 
@@ -380,6 +800,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 )
                 # Генерация текста
                 text = await (generate_text(answers['language'], answers['level'], answers['wishes']))
+                decrease_generation(update.effective_user.id)
                 context.user_data["original_text"] = text
                 text = process_ctest(text)
                 await update.message.reply_text(
@@ -411,6 +832,8 @@ async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 ################### MAIN #####################
 def main() -> None:
+    init_db()
+
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(
@@ -430,8 +853,26 @@ def main() -> None:
     )
 
     app.add_handler(
+    CommandHandler("my_info", my_info_command)
+    )
+
+    app.add_handler(
+    CommandHandler("give_sub", give_sub_command)
+    )
+
+    app.add_handler(
+    CommandHandler("reset_sub", reset_sub_command)
+    )
+
+    app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
     )
+
+    app.add_handler(
+    CommandHandler("subscription", subscription_command)
+    )
+
+
 
     app.add_handler(
         MessageHandler(~filters.TEXT, handle_non_text)
