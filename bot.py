@@ -716,6 +716,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             update.effective_chat.id,
             context
         )
+        context.user_data["messages"] = []
+
         msg = await update.message.reply_text(
             "Вы вернулись в главное меню\n",
             reply_markup=get_main_keyboard()
@@ -828,7 +830,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             elif quiz_state == STATE_COMPLETED:
                 context.user_data["mode"] = MODE_CREATE
                 context.user_data["quiz_state"] = None
-                keyboard = get_main_keyboard()
+                await get_main_keyboard()
 
             else:
                 text = (
@@ -836,7 +838,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     f"/support"
                     f"{context.user_data['mode']}\n"
                     f"{context.user_data['quiz_state']}"
-                    f"{user_comand()}"
+                    f"{await user_comand()}"
                 )
                 await update.message.reply_text(
                 text,
