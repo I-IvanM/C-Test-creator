@@ -3,7 +3,8 @@
 from telegram import (
     Update,
     ReplyKeyboardMarkup,
-    KeyboardButton
+    KeyboardButton,
+    LabeledPrice
 )
 from telegram.ext import (
     Application,
@@ -11,25 +12,25 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     filters,
+    PreCheckoutQueryHandler
 )
 from telegram.constants import ChatAction
 import re
 from openai import AsyncOpenAI
 import sqlite3
 from datetime import datetime, timedelta
-import asyncio
-
 import os
 
 ################## ПЕРЕМЕННЫЕ ##################
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ADMIN_ID = 876824576
+BOT_TOKEN = "8710418561:AAE-XdSqTOq6dXVSig8noY3EvfQBMvaYQ5A"
+OPENAI_API_KEY = "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"
 
-# ID поддержки, куда перенаправлять запросы
-admin = "@I_IvanM"
+ADMIN_ID = 876824576 # Сюда идёт поддержка, этот пользователь может выдавать VIP
+ADMIN_PASSWORD = "Skat" # Пароль там, где он нужен
+SUBSCRIPTION_PRICE = 100 # Цена подписки
 
+# Переменные состояний
 MODE_CREATE = "create"
 MODE_GENERATE = "generate"
 MODE_SUPPORT = "support"
@@ -37,7 +38,6 @@ MODE_SUPPORT = "support"
 STATE_QUESTION_1 = "question_1"
 STATE_QUESTION_2 = "question_2"
 STATE_QUESTION_3 = "question_3"
-STATE_QUESTION_4 = "question_4"
 STATE_COMPLETED = "completed"
 
 ###################### КЛАВИАТУРЫ #####################
@@ -83,7 +83,8 @@ def get_answer_keyboard():
 # Управление подпиской
 def get_subscription_keyboard():
     keyboard = [
-        [KeyboardButton("О подписке")],
+        [KeyboardButton("О подписке ℹ")],
+        [KeyboardButton("Моя подписка")],
         [KeyboardButton("Купить подписку")],
         [KeyboardButton("Вернуться в главное меню")]
     ]
@@ -113,7 +114,7 @@ def process_ctest(user_text: str) -> str:
        words = user_text[pos + 1:].lstrip()
     else:
         # ERROR: No sentence-ending punctuation found
-        output = "There must be multiple sentence-ending punctuation marks (., ?, !) in the input text."
+        output = "В тексте должно быть несколько предложений, чтобы из него можно было составить C-Test."
         return output
 
     words = re.findall(r"\w+|[^\w\s]", words)
@@ -123,7 +124,7 @@ def process_ctest(user_text: str) -> str:
         count += 1
         if count % 2 == 0:
             num = len(words[j])
-            if num >1:
+            if num >1 and not words[j].isdigit():
                 output += words[j][:num//2] + "___  "
             # Проверка на символ, который не буква
             elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
@@ -178,7 +179,7 @@ def process_marck_answers(generated_text: str):
         count += 1
         if count % 2 == 0:
             num = len(words[j])
-            if num >1:
+            if num >1 and not words[j].isdigit():
                 output += words[j][:num//2] + "<b>" + words[j][num//2:] + "</b> "
             # Проверка на символ, который не буква
             elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
@@ -254,7 +255,7 @@ def register_user(user_id: int, username: str, first_name: str):
             generations_left,
             is_VIP
         )
-        VALUES (?, ?, ?, ?, ?, NULL, 3, 2, 0)
+        VALUES (?, ?, ?, ?, ?, NULL, 3, 3, 0)
     """, (
         user_id,
         username,
@@ -495,11 +496,11 @@ def give_subscription(user_id: int):
         current_expire = datetime.fromisoformat(row[0])
 
         if current_expire > now:
-            new_expire = current_expire + timedelta(hours=1)
+            new_expire = current_expire + timedelta(days=30)
         else:
-            new_expire = now + timedelta(hours=1)
+            new_expire = now + timedelta(days=30)
     else:
-        new_expire = now + timedelta(hours=1)
+        new_expire = now + timedelta(days=30)
 
     cursor.execute("""
         UPDATE users
@@ -513,8 +514,8 @@ def give_subscription(user_id: int):
     conn.commit()
     conn.close()
 
-    add_creations(user_id, 2)
-    add_generations(user_id, 2)
+    add_creations(user_id, 100)
+    add_generations(user_id, 100)
 
 # БАЗА ДАННЫХ, обнулить подписку
 def reset_subscription(user_id: int):
@@ -533,6 +534,26 @@ def reset_subscription(user_id: int):
 
     conn.commit()
     conn.close()
+
+# БАЗА ДАННЫХ, выдать VIP
+def set_vip(user_id: int, value: bool):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET is_VIP = ?
+        WHERE user_id = ?
+    """, (1 if value else 0, user_id))
+
+    conn.commit()
+    conn.close()
+
+# ПОДПИСКА, создание строки метки платежа
+def build_payload(user_id: int, purpose: str) -> str:
+    return f"{purpose}:{user_id}"
+
+
 ######################### РАБОТА БОТА ######################### (обработчики входящих)
 
 # START
@@ -542,19 +563,21 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Если у Вас есть вопросы, нажмите кнопку \"справка\" или введите команду /help.")
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
-    context.user_data["messages"] = []
+    context.user_data.setdefault("messages", [])
 
     reply_markup=get_main_keyboard()
 
-    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    msg = await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    context.user_data["messages"].append(msg.message_id)
+    context.user_data["messages"].append(update.message.message_id)
 
 # Удаление сообщений из списка context.user_data["messages"]
 async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
                 for i in list:
-                    await context.bot.delete_message(
-                        chat_id,
-                        message_id=i
-                    )
+                    try:
+                        await context.bot.delete_message(chat_id, message_id=i)
+                    except Exception:
+                        pass
 
 # КОМАНДА /help 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -572,9 +595,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/help – вызывает это сообщение\n"
         "/subscription – получиль информацию об условиях подписки\n"
         "/my_info – получить информацию о состоянии моей подписки\n"
-        "/give_sub – Выдать себе подписку (пока на час, тестовая команда)\n"
-        "/reset_sub – Сбрасывает лимиты в 0 (тестовая)\n"
-        "/user – Получить все данные о себе из базы данных\n"
         "/support – позволяет отправить запрос в тех. поддержку бота\n"
     )
     await update.message.reply_text(text)
@@ -594,7 +614,6 @@ async def user_comand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text(text)
     context.user_data["messages"].append(msg.message_id)
 
-
 # ПОДПИСКА, выдача информации /my_info
 async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
@@ -602,7 +621,7 @@ async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if date != None:
         date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
-        status = f"активна до {user['subscription_expires_at']}"
+        status = f"активна до {date}"
     else:
         status = "не активна"
 
@@ -613,7 +632,7 @@ async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     if user['is_VIP'] == 1:
-        text = (f"Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n {text}")
+        text = (f"🎩 Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n\n{text}")
 
     msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
     context.user_data["messages"].append(msg.message_id)
@@ -640,12 +659,16 @@ async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     give_subscription(update.effective_user.id)
     user = get_user(update.effective_user.id)
+    date = user["subscription_expires_at"]
+    if date != None:
+        date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
+
 
     await update.message.reply_text(
         "🎉🎉🎉 Поздравляем! 🎉🎉🎉\n"
         "Вы оформили подписку на C-Test creator бота!\n"
         "📚 Мы желаем Вам хорошей подготовки и простых заданий на экзамене!\n\n"
-        f"Подписка активна до {user['subscription_expires_at']}"
+        f"Подписка активна до {date}"
     )
 
 # ПОДПИСКА, обнулить /reset_sub
@@ -653,9 +676,117 @@ async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reset_subscription(update.effective_user.id)
 
-    await update.message.reply_text(
+    msg = await update.message.reply_text(
         "Подписка сброшена."
     )
+    context.user_data["messages"].append(msg.message_id)
+    context.user_data["messages"].append(update.message.message_id)
+
+# ПОДПИСКА, выдать / забрать VIP
+async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    args = context.args
+
+    if len(args) != 3:
+        await update.message.reply_text(
+            "Отправьте команду в формте:\n/VIP пароль user_id True|False"
+        )
+        return
+
+    password = args[0]
+
+    if password != ADMIN_PASSWORD:
+        await update.message.reply_text("Неверный пароль")
+        return
+    
+    if update.effective_user.id != ADMIN_ID:
+        msg = await update.message.reply_text("Вы не администратор.")
+        context.user_data["messages"].append(msg.message_id)
+        context.user_data["messages"].append(update.message.message_id)
+        return
+
+    try:
+        user_id = int(args[1])
+    except ValueError:
+        await update.message.reply_text("Некорректный user_id")
+        return
+
+    vip_value = args[2].lower()
+
+    if vip_value == "true":
+        set_vip(user_id, True)
+        await update.message.reply_text(
+            f"VIP выдан пользователю {user_id}"
+        )
+
+    elif vip_value == "false":
+        set_vip(user_id, False)
+        await update.message.reply_text(
+            f"VIP забран у пользователя {user_id}"
+        )
+
+    else:
+        await update.message.reply_text(
+            "Последний параметр должен быть True или False"
+        )
+
+# Оплата
+async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int) -> None:
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    payload = build_payload(user_id, "donate")
+
+    title = "Оплата подписки"
+    description = f"Подписка на C-Test crator: {amount} ⭐ || 1 месяц, 100 преобразований, 100 генераций"
+    prices = [LabeledPrice(label="Донат", amount=amount)]
+
+    await context.bot.send_invoice(
+        chat_id=chat_id,
+        title=title,
+        description=description,
+        payload=payload,
+        provider_token="",
+        currency="XTR",
+        prices=prices,
+    )
+
+# Донат
+async def donate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    args = context.args
+
+    if not args or not args[0].isdigit():
+        await update.message.reply_text("Введите команду в формате: /donate <количество звёзд>")
+        return
+
+    amount = int(args[0])
+
+    if amount < 1:
+        await update.message.reply_text("Количество звёзд должно быть не меньше 1.")
+        return
+
+    await pay(update, context, amount)
+
+# ПОДПИСКА, выставление счёта
+async def buy_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await pay(update, context, SUBSCRIPTION_PRICE)
+
+# Подтверждение готовности (наличия)
+async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.pre_checkout_query
+    await query.answer(ok=True)
+
+# Подтверждение оплаты
+async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    payment = update.message.successful_payment
+    amount = payment.total_amount
+
+    await update.message.reply_text(
+        f"Спасибо, платёж {amount} ⭐ получен!\n"
+        "Если что-то пошло не так, вы можете обратить в поддержку с помощью команды /support"
+    )
+
+    give_subscription(update.effective_user.id)
+
 
 ########################## ОБРАБОТКА ВХОДЯЩИХ ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -686,9 +817,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     # Кнопка переключения в режим генерации
     elif user_text == "Генерировать":
         if limits["generations"] <= 0:
-                await update.message.reply_text(
+                msg = await update.message.reply_text(
                 "Лимит генераций исчерпан, купите подписку!"
                 )
+                context.user_data["messages"].append(msg.message_id)
                 return
         
         context.user_data['mode'] = MODE_GENERATE
@@ -732,6 +864,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     # Кнопка смотреть ответы
     elif user_text == "Смотреть ответы":
         context.user_data["messages"].append(update.message.message_id)
+        if "original_text" not in context.user_data:
+            return
         text = context.user_data["original_text"]
         text = process_marck_answers(text)
         await update.message.reply_text(
@@ -739,15 +873,16 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         reply_markup=get_main_keyboard(),
         parse_mode="HTML")
 
-    elif user_text == "Подписка":
+    elif user_text == "Подписка" or user_text == "Моя подписка":
         context.user_data["messages"].append(update.message.message_id)
         await my_info_command(update, context)
 
     elif user_text == "Купить подписку":
         context.user_data["messages"].append(update.message.message_id)
-        await give_sub_command(update, context)
+        await buy_sub_command(update, context)
 
-    elif user_text == "О подписке":
+    elif user_text == "О подписке ℹ":
+        context.user_data["messages"].append(update.message.message_id)
         await subscription_command (update, context)
 
     # Обработка свободного текста
@@ -803,6 +938,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     update.effective_chat.id,
                     context
                 )
+                context.user_data["messages"] = []
                 # Отправка нового сообения
                 text = (
                     f"Отлично, генерируется!\n"
@@ -810,9 +946,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     f"{answers['level']}\n"
                     f"{answers['wishes']}"
                 )
-                await update.message.reply_text(
+                msg = await update.message.reply_text(
                     text,
                     reply_markup=get_answer_keyboard())
+                context.user_data["messages"].append(update.message.message_id)
                 # Печатает...
                 await context.bot.send_chat_action(
                     chat_id=update.effective_chat.id,
@@ -830,7 +967,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             elif quiz_state == STATE_COMPLETED:
                 context.user_data["mode"] = MODE_CREATE
                 context.user_data["quiz_state"] = None
-                await get_main_keyboard()
 
             else:
                 text = (
@@ -850,7 +986,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 text=(
                     f"🔧 Обращение в поддержку\n\n"
                     f"User ID: {update.effective_user.id}\n"
-                    f"Username: @{update.effective_user.username}\n"
+                    f"Username: @{update.effective_user.username or "no username"}\n"
                     f"Имя: {update.effective_user.first_name}\n\n"
                     f"{user_text}"
                 )
@@ -864,6 +1000,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 ########################### ОБРАБОТКА НЕ-ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+    context.user_data.setdefault("messages", [])
 
     # Пересылаем сообщение администратору
     await context.bot.forward_message(
@@ -916,11 +1054,15 @@ def main() -> None:
     )
 
     app.add_handler(
-    CommandHandler("give_sub", give_sub_command)
+        CommandHandler("give_sub", give_sub_command)
     )
 
     app.add_handler(
-    CommandHandler("reset_sub", reset_sub_command)
+        CommandHandler("reset_sub", reset_sub_command)
+    )
+
+    app.add_handler(
+        CommandHandler("VIP", vip_command)
     )
 
     app.add_handler(
@@ -928,10 +1070,20 @@ def main() -> None:
     )
 
     app.add_handler(
-    CommandHandler("subscription", subscription_command)
+        CommandHandler("subscription", subscription_command)
     )
 
+    app.add_handler(
+        CommandHandler("donate", donate_command)
+    )
 
+    app.add_handler(
+        PreCheckoutQueryHandler(precheckout_callback)
+    )
+
+    app.add_handler(
+        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
+    )
 
     app.add_handler(
         MessageHandler(~filters.TEXT, handle_non_text)
