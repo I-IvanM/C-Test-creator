@@ -710,15 +710,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
         
-        msg = await update.message.reply_text(
-            "Вы вернулись в главное меню\n",
-            reply_markup=get_main_keyboard()
-        )
         # Удаление сообщений из списка
         await delete_listed_messages(
             context.user_data["messages"],
             update.effective_chat.id,
             context
+        )
+        msg = await update.message.reply_text(
+            "Вы вернулись в главное меню\n",
+            reply_markup=get_main_keyboard()
         )
         context.user_data["messages"].append(msg.message_id)
 
