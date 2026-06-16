@@ -615,7 +615,7 @@ async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user['is_VIP'] == 1:
         text = (f"Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n {text}")
 
-    msg = await update.message.reply_text(text)
+    msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
     context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, рассказ о ней /subscription
@@ -632,7 +632,7 @@ async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYP
         "1 месяц подписки стоит 100 звёзд ≈ 2-3 €."
     )
 
-    msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
+    msg = await update.message.reply_text(text)
     context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, выдать /give_sub
@@ -659,6 +659,7 @@ async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ########################## ОБРАБОТКА ВХОДЯЩИХ ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data.setdefault("messages", [])
     user_text = update.message.text
     quiz_state = context.user_data.get('quiz_state')
     mode = context.user_data.get('mode', MODE_CREATE)
@@ -672,6 +673,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Кнопка переключения в режим "текст в C-Test"
     if user_text == "текст в C-Test":
+        context.user_data["messages"].append(update.message.message_id)
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
         msg = await update.message.reply_text(
@@ -692,7 +694,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['mode'] = MODE_GENERATE
         context.user_data['quiz_state'] = STATE_QUESTION_1
         context.user_data['answers'] = {}
-        context.user_data["messages"] = []
+        context.user_data["messages"].append(update.message.message_id)
 
         msg = await update.message.reply_text(
             "🐙 Переключено в режим Генерации.\n\n"
@@ -704,6 +706,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Кнопка вернуться в главное меню
     elif user_text == "Вернуться в главное меню":
+        context.user_data["messages"].append(update.message.message_id)
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
         msg = await update.message.reply_text(
@@ -721,10 +724,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Кнопка помощь
     elif user_text == "Справка":
+        context.user_data["messages"].append(update.message.message_id)
         await help_command(update, context)
 
     # Кнопка смотреть ответы
     elif user_text == "Смотреть ответы":
+        context.user_data["messages"].append(update.message.message_id)
         text = context.user_data["original_text"]
         text = process_marck_answers(text)
         await update.message.reply_text(
@@ -733,9 +738,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         parse_mode="HTML")
 
     elif user_text == "Подписка":
+        context.user_data["messages"].append(update.message.message_id)
         await my_info_command(update, context)
 
     elif user_text == "Купить подписку":
+        context.user_data["messages"].append(update.message.message_id)
         await give_sub_command(update, context)
 
     elif user_text == "О подписке":
