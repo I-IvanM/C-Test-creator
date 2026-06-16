@@ -17,6 +17,7 @@ import re
 from openai import AsyncOpenAI
 import sqlite3
 from datetime import datetime, timedelta
+import asyncio
 
 import os
 
@@ -24,6 +25,7 @@ import os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ADMIN_ID = 876824576
 
 # ID поддержки, куда перенаправлять запросы
 admin = "@I_IvanM"
@@ -44,7 +46,7 @@ STATE_COMPLETED = "completed"
 def get_main_keyboard():
     keyboard = [
         [KeyboardButton("текст в C-Test"), KeyboardButton("Генерировать")],
-        [KeyboardButton("Справка"), KeyboardButton("ℹ Подписка info")]
+        [KeyboardButton("Справка"), KeyboardButton("Подписка")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -81,7 +83,7 @@ def get_answer_keyboard():
 # Управление подпиской
 def get_subscription_keyboard():
     keyboard = [
-        [KeyboardButton("Моя подписка")],
+        [KeyboardButton("О подписке")],
         [KeyboardButton("Купить подписку")],
         [KeyboardButton("Вернуться в главное меню")]
     ]
@@ -208,18 +210,10 @@ async def generate_text(language: str, level: str, wishes: str) -> str:
               f"НЕ ДОБАВЛЯЙ НИКАКИХ КОММЕНТАРИЕВ! ТОЛЬКО САМ ТЕКСТ! Игнорируй противоречащие условиям и непонятные пожелания.")
     
     response = await client.responses.create(
-        model="gpt-5-mini",
+        model="gpt-5-nano",
         input=prompt
     )
     return response.output_text
-
-# Удаление сообщений из списка context.user_data["messages"]
-async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
-                for i in list:
-                    await context.bot.delete_message(
-                        chat_id,
-                        message_id=i
-                    )
 
 # БАЗА ДАННЫХ, илиниализация
 def init_db():
@@ -554,6 +548,14 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
+# Удаление сообщений из списка context.user_data["messages"]
+async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
+                for i in list:
+                    await context.bot.delete_message(
+                        chat_id,
+                        message_id=i
+                    )
+
 # КОМАНДА /help 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
@@ -573,41 +575,33 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/give_sub – Выдать себе подписку (пока на час, тестовая команда)\n"
         "/reset_sub – Сбрасывает лимиты в 0 (тестовая)\n"
         "/user – Получить все данные о себе из базы данных\n"
-
-        #"/clear – полностью очищает чат с ботом\n"
-        #"/support – позволяет отправить запрос в тех. поддержку бота\n"
+        "/support – позволяет отправить запрос в тех. поддержку бота\n"
     )
     await update.message.reply_text(text)
-
-# Команда /clear
-async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Функция ещё не готова")
-
-    context.user_data.clear()
-    await start_command(update, context)
-
 
 # Комнада /support
 async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = MODE_SUPPORT
     await update.message.reply_text(
-            "Опишите Вашу проблему:"
-            "Пока что прикладывать скриншоты нельзя",
+            "🔧 Опишите Вашу проблему.\n"
+            "Вы также может отправить фото возникшей проблемы, если считаете нужным. Все нетектовые сообщения автоматически перенаправляются в поддержку.",
             reply_markup=get_menu_keyboard()
         )
-    print("Функция ещё не готова, отправить сообщение на ", admin)
 
 # БАЗА ДАННЫХ, выдать всю информацию о пользователе /user
 async def user_comand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = print_user(update.effective_user.id)
-    await update.message.reply_text(text)
+    msg = await update.message.reply_text(text)
+    context.user_data["messages"].append(msg.message_id)
 
 
 # ПОДПИСКА, выдача информации /my_info
 async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
+    date = user["subscription_expires_at"]
 
-    if user["subscription_expires_at"]:
+    if date != None:
+        date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
         status = f"активна до {user['subscription_expires_at']}"
     else:
         status = "не активна"
@@ -621,7 +615,8 @@ async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user['is_VIP'] == 1:
         text = (f"Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n {text}")
 
-    await update.message.reply_text(text)
+    msg = await update.message.reply_text(text)
+    context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, рассказ о ней /subscription
 async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -629,14 +624,16 @@ async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYP
     text = (
         "Подписка включает:\n\n"
         "• 100 преобразований текста в C-Test\n"
-        "• 100 генераций новых C-Test\n"
-        "• срок действия 30 дней\n\n"
-        "По истечении 30 дней все оставшиеся генерации с преобразования сгорают.\n"
+        "• 100 генераций новых C-Test\n\n"
+        "Cрок действия 30 дней.\n"
+        "Подписка не продляется автоматически.\n"
+        "По истечении 30 дней все неизрасходыванные генерации и преобразования сгорают.\n"
         "Оплата производится при помощи Telegram Stars:\n"
-        "1 подписка: 100 звёзд ≈ 2-3 €"
+        "1 месяц подписки стоит 100 звёзд ≈ 2-3 €."
     )
 
-    await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
+    msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
+    context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, выдать /give_sub
 async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -677,11 +674,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if user_text == "текст в C-Test":
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
-        await update.message.reply_text(
+        msg = await update.message.reply_text(
             "✅ Переключено в режим \"текст в C-Test\".\n"
             "Отправьте ваш текст — бот превратит его в C-Test!",
             reply_markup=get_main_keyboard()
         )
+        context.user_data["messages"].append(msg.message_id)
 
     # Кнопка переключения в режим генерации
     elif user_text == "Генерировать":
@@ -704,14 +702,21 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         )
         context.user_data["messages"].append(msg.message_id)
 
-    # Кнопка отмены генерации
+    # Кнопка вернуться в главное меню
     elif user_text == "Вернуться в главное меню":
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
-        await update.message.reply_text(
-            "❌ Генерация отменена.\n"
-            "Переключено в режим обработки вашего текста.",
+        msg = await update.message.reply_text(
+            "Вы вернулись в главное меню\n",
             reply_markup=get_main_keyboard()
+        )
+        context.user_data["messages"].append(msg.message_id)
+        await asyncio.sleep(4)
+        # Удаление сообщений из списка
+        await delete_listed_messages(
+            context.user_data["messages"],
+            update.effective_chat.id,
+            context
         )
 
     # Кнопка помощь
@@ -727,13 +732,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         reply_markup=get_main_keyboard(),
         parse_mode="HTML")
 
-    elif user_text == "Моя подписка":
+    elif user_text == "Подписка":
         await my_info_command(update, context)
 
     elif user_text == "Купить подписку":
         await give_sub_command(update, context)
 
-    elif user_text == "ℹ Подписка info":
+    elif user_text == "О подписке":
         await subscription_command (update, context)
 
     # Обработка свободного текста
@@ -741,9 +746,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         # В режиме "текст в C-Test" — обрабатываем текст
         if mode == MODE_CREATE:
             if limits["creations"] <= 0:
-                await update.message.reply_text(
+                msg = await update.message.reply_text(
                     "Лимит преобразований исчерпан, купите подписку!"
                 )
+                context.user_data["messages"].append(msg.message_id)
                 return
             
             try:
@@ -820,20 +826,59 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             else:
                 text = (
                     f"Ошибка, обратитесь в поддержку!\n\n"
+                    f"/support"
                     f"{context.user_data['mode']}\n"
                     f"{context.user_data['quiz_state']}"
+                    f"{user_comand()}"
                 )
                 await update.message.reply_text(
                 text,
                 reply_markup=get_menu_keyboard())
 
+        elif mode == MODE_SUPPORT:
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=(
+                    f"🔧 Обращение в поддержку\n\n"
+                    f"User ID: {update.effective_user.id}\n"
+                    f"Username: @{update.effective_user.username}\n"
+                    f"Имя: {update.effective_user.first_name}\n\n"
+                    f"{user_text}"
+                )
+            )
+            msg = await update.message.reply_text(
+                "Сообщение отправлено в поддержку."
+            )
+            context.user_data["messages"].append(msg.message_id)
+
 
 
 ########################### ОБРАБОТКА НЕ-ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "Error: Unsupported message type. Please send text messages only."
+
+    # Пересылаем сообщение администратору
+    await context.bot.forward_message(
+        chat_id=ADMIN_ID,
+        from_chat_id=update.effective_chat.id,
+        message_id=update.message.message_id
     )
+
+    # Дополнительная информация о пользователе
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=(
+            f"Нетекстовое сообщение\n\n"
+            f"User ID: {update.effective_user.id}\n"
+            f"Username: @{update.effective_user.username}\n"
+            f"Имя: {update.effective_user.first_name}"
+        )
+    )
+
+    msg = await update.message.reply_text(
+        "Ваше сообщение было переслано в поддержку."
+    )
+
+    context.user_data["messages"].append(msg.message_id)
 
 ################### MAIN #####################
 def main() -> None:
@@ -847,10 +892,6 @@ def main() -> None:
 
     app.add_handler(
         CommandHandler("help", help_command)
-    )
-
-    app.add_handler(
-        CommandHandler("clear", clear_command)
     )
 
     app.add_handler(
