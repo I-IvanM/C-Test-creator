@@ -23,8 +23,8 @@ import os
 
 ################## ПЕРЕМЕННЫЕ ##################
 
-BOT_TOKEN = "8710418561:AAE-XdSqTOq6dXVSig8noY3EvfQBMvaYQ5A"
-OPENAI_API_KEY = "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"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 ADMIN_ID = 876824576 # Сюда идёт поддержка, этот пользователь может выдавать VIP
 ADMIN_PASSWORD = "Skat" # Пароль там, где он нужен
@@ -63,6 +63,14 @@ def get_A1C2_keyboard():
     keyboard = [
         [KeyboardButton("A1"), KeyboardButton("B1"), KeyboardButton("C1")],
         [KeyboardButton("A2"), KeyboardButton("B2"), KeyboardButton("C2")],
+        [KeyboardButton("Вернуться в главное меню")]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+# Нет пожеланий
+def get_no_wishes_keyboard():
+    keyboard = [
+        [KeyboardButton("Нет пожеланий")],
         [KeyboardButton("Вернуться в главное меню")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -211,7 +219,7 @@ async def generate_text(language: str, level: str, wishes: str) -> str:
               f"НЕ ДОБАВЛЯЙ НИКАКИХ КОММЕНТАРИЕВ! ТОЛЬКО САМ ТЕКСТ! Игнорируй противоречащие условиям и непонятные пожелания.")
     
     response = await client.responses.create(
-        model="gpt-5-nano",
+        model="gpt-5-mini",
         input=prompt
     )
     return response.output_text
@@ -926,7 +934,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 context.user_data["quiz_state"] = STATE_QUESTION_3
                 msg = await update.message.reply_text(
                     text,
-                    reply_markup=get_menu_keyboard())
+                    reply_markup=get_no_wishes_keyboard())
                 context.user_data["messages"].append(msg.message_id)
 
             elif quiz_state == STATE_QUESTION_3:
@@ -1053,6 +1061,7 @@ def main() -> None:
     CommandHandler("my_info", my_info_command)
     )
 
+    '''
     app.add_handler(
         CommandHandler("give_sub", give_sub_command)
     )
@@ -1060,6 +1069,7 @@ def main() -> None:
     app.add_handler(
         CommandHandler("reset_sub", reset_sub_command)
     )
+    '''
 
     app.add_handler(
         CommandHandler("VIP", vip_command)
