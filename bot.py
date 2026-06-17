@@ -20,14 +20,18 @@ from openai import AsyncOpenAI
 import sqlite3
 from datetime import datetime, timedelta
 import os
+from dotenv import load_dotenv
+load_dotenv()  # подтягивает переменные из файла .env
 
 ################## ПЕРЕМЕННЫЕ ##################
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+DATABASE_PATH = os.getenv("DATABASE_PATH", "users.db")
+
 ADMIN_ID = 876824576 # Сюда идёт поддержка, этот пользователь может выдавать VIP
-ADMIN_PASSWORD = "Skat" # Пароль там, где он нужен
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD") # Пароль там, где он нужен
 SUBSCRIPTION_PRICE = 100 # Цена подписки
 
 # Переменные состояний
@@ -226,7 +230,7 @@ async def generate_text(language: str, level: str, wishes: str) -> str:
 
 # БАЗА ДАННЫХ, илиниализация
 def init_db():
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -248,7 +252,7 @@ def init_db():
 
 # БАЗА ДАННЫ, регистрация пользователя
 def register_user(user_id: int, username: str, first_name: str):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -277,7 +281,7 @@ def register_user(user_id: int, username: str, first_name: str):
 
 # БАЗА ДАННЫХ, вызов данных пользователя
 def get_user(user_id: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -326,7 +330,7 @@ def print_user(user_id: int) -> str:
 
 # БАЗА ДАННЫХ, Уменьшить кол-во оставшихся генераций
 def decrease_generation(user_id: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -340,7 +344,7 @@ def decrease_generation(user_id: int):
 
 # БАЗА ДАННЫХ, уменьшить количество оставшихся конвертаций
 def decrease_creation(user_id: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -354,7 +358,7 @@ def decrease_creation(user_id: int):
 
 # БАЗА ДАННЫХ, довавление генераций
 def add_generations(user_id: int, amount: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -368,7 +372,7 @@ def add_generations(user_id: int, amount: int):
 
 # БАЗА ДАННЫХ, добавление конвертаций
 def add_creations(user_id: int, amount: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -382,7 +386,7 @@ def add_creations(user_id: int, amount: int):
 
 # БАЗА ДАННЫХ, установка значения генераций
 def set_generations(user_id: int, amount: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -396,7 +400,7 @@ def set_generations(user_id: int, amount: int):
 
 # БАЗА ДАННЫХ, установка значений конвертаций
 def set_creations(user_id: int, amount: int):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -426,7 +430,7 @@ def check_subscription_expired(user_id: int):
             set_generations(user_id, 3)
 
 
-        conn = sqlite3.connect("users.db")
+        conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -457,7 +461,7 @@ def check_free_month(user_id: int):
         if user["creations_left"] < 3:
             set_creations(user_id, 3)
 
-        conn = sqlite3.connect("users.db")
+        conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -487,7 +491,7 @@ def refresh_user(user_id: int):
 # БАЗА ДАННЫХ, выдача подписки
 def give_subscription(user_id: int):
 
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -528,7 +532,7 @@ def give_subscription(user_id: int):
 # БАЗА ДАННЫХ, обнулить подписку
 def reset_subscription(user_id: int):
 
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -545,7 +549,7 @@ def reset_subscription(user_id: int):
 
 # БАЗА ДАННЫХ, выдать VIP
 def set_vip(user_id: int, value: bool):
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
