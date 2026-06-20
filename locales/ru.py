@@ -30,6 +30,7 @@ TEXT = {
                                               "/support – позволяет отправить запрос в тех. поддержку бота\n"),
     "Describe your problem.": ("🔧 Опишите Вашу проблему.\n"
                                "Вы также может отправить фото возникшей проблемы, если считаете нужным. Все нетектовые сообщения автоматически перенаправляются в поддержку."),
+    "Select your language.": "Выберите свой язык.",
     "active until": ("активна до {date}"),
     "inactive": "не активна",
     "Subscription, Conversions remaining, Generations remaining": ("Подписка {status}\n\n"
@@ -77,6 +78,8 @@ TEXT = {
                                 "{quiz_state}"
                                 ),
     "Contacting Support": "🔧 Обращение в поддержку\n\n",
+    "Please select one of the offered languages.": "Пожалуйста, выберите из предложенных языков.",
+    "The interface language has been changed to": "Язык интерфеса был изменён на {ln}",
     "The message has been sent to support.": "Сообщение отправлено в поддержку.",
     "Your message has been forwarded to support.": "Ваше сообщение было переслано в поддержку.",
 

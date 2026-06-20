@@ -30,6 +30,7 @@ TEXT = {
                                               "/support – ارسال درخواست به پشتیبانی ربات\n"),
     "Describe your problem.": ("🔧 لطفاً مشکل خود را توضیح دهید.\n"
                                "در صورت نیاز می‌توانید عکس نیز ارسال کنید. تمام پیام‌های غیرمتنی به صورت خودکار برای پشتیبانی ارسال می‌شوند."),
+    "Select your language.": "زبان خود را انتخاب کنید",
     "active until": ("فعال تا {date}"),
     "inactive": "غیرفعال",
     "Subscription, Conversions remaining, Generations remaining": ("اشتراک: {status}\n\n"
@@ -77,6 +78,8 @@ TEXT = {
                                 "{quiz_state}"
                                 ),
     "Contacting Support": "🔧 ارتباط با پشتیبانی\n\n",
+    "The interface language has been changed to": "زبان رابط کاربری به {ln} تغییر یافته است.",
+    "Please select one of the offered languages.": "لطفا از بین زبان‌های پیشنهادی انتخاب کنید.",
     "The message has been sent to support.": "پیام به پشتیبانی ارسال شد.",
     "Your message has been forwarded to support.": "پیام شما برای پشتیبانی ارسال شد.",
 

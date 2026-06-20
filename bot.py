@@ -26,7 +26,9 @@ load_dotenv()  # подтягиваем переменные из файла .en
 #Подтягиваем переводы
 from locales.ru import TEXT as RU
 from locales.fa import TEXT as FA
-translations = {"ru": RU, "fa": FA,}
+from locales.en import TEXT as EN
+from locales.de import TEXT as DE
+translations = {"ru": RU, "fa": FA, "en": EN, "de": DE}
 
 ################## ПЕРЕМЕННЫЕ ##################
 
@@ -43,6 +45,7 @@ SUBSCRIPTION_PRICE = 100 # Цена подписки
 MODE_CREATE = "create"
 MODE_GENERATE = "generate"
 MODE_SUPPORT = "support"
+MODE_SETTINGS = "settings"
 
 STATE_QUESTION_1 = "question_1"
 STATE_QUESTION_2 = "question_2"
@@ -55,7 +58,7 @@ STATE_COMPLETED = "completed"
 def get_main_keyboard(language):
     keyboard = [
         [KeyboardButton(t(language, "text to c-test")), KeyboardButton(t(language, "generate"))],
-        [KeyboardButton(t(language, "help")), KeyboardButton(t(language, "Subscription"))]
+        [KeyboardButton(t(language, "help")), KeyboardButton(t(language, "Subscription")), KeyboardButton(t(language, "🌐"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -107,12 +110,21 @@ def get_subscription_keyboard(language):
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+# Смена языков
+def get_my_language_keyboard(language):
+    keyboard = [
+        [KeyboardButton("English"), KeyboardButton("Deutsch")],
+        [KeyboardButton("Русский"), KeyboardButton("فارسی")],
+        [KeyboardButton(t(language, "Return to the main menu"))]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
 ################# ФУНКЦИИ #################
 
 #Подстановка перевода
 def t(language, key, **kwargs):
     if language not in translations:
-        language = "ru"
+        language = "en"
     return translations[language][key].format(**kwargs)
 
 # превращение в c-test
@@ -607,9 +619,9 @@ def build_payload(user_id: int, purpose: str) -> str:
 
 # START
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    language = (update.effective_user.language_code or "ru")[:2]
+    language = (update.effective_user.language_code or "en")[:2]
     if language not in translations:
-        language = "ru"
+        language = "en"
 
     welcome_text = (t(language, "starting text"))
     context.user_data['mode'] = MODE_CREATE
@@ -634,11 +646,11 @@ async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TY
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
     if user is None:
-        language = (update.effective_user.language_code or "ru")[:2]
+        language = (update.effective_user.language_code or "en")[:2]
         if language not in translations:
-            language = "ru"
+            language = "en"
     else:
-        language = user["language"] or 'ru'
+        language = user["language"] or "en"
     text = (t(language, "The bot can operate in two modes: ..."))
     await update.message.reply_text(text)
 
@@ -646,10 +658,20 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE,):
     context.user_data["mode"] = MODE_SUPPORT
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or "en"
     await update.message.reply_text(
             t(language,"Describe your problem."),
             reply_markup=get_menu_keyboard(language)
+        )
+    
+# Команда /my_language
+async def my_language_command(update: Update, context: ContextTypes.DEFAULT_TYPE,):
+    context.user_data["mode"] = MODE_SETTINGS
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
+    await update.message.reply_text(
+            t(language,"Select your language."),
+            reply_markup=get_my_language_keyboard(language)
         )
 
 # БАЗА ДАННЫХ, выдать всю информацию о пользователе /user
@@ -838,9 +860,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     user_text = update.message.text
     quiz_state = context.user_data.get('quiz_state')
     mode = context.user_data.get('mode', MODE_CREATE)
-    language = (update.effective_user.language_code or "ru")[:2]
+    language = (update.effective_user.language_code or "en")[:2]
     if language not in translations:
-        language = "ru"
+        language = "en"
 
     register_user(
         update.effective_user.id,
@@ -930,6 +952,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     elif user_text == t(language, "About subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await subscription_command (update, context)
+
+    elif user_text == "🌐":
+        context.user_data["messages"].append(update.message.message_id)
+        await my_language_command (update, context)
 
     # Обработка свободного текста
     else:
@@ -1047,6 +1073,39 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
             context.user_data["messages"].append(msg.message_id)
 
+        elif mode == MODE_SETTINGS:
+            user_id = update.effective_user.id
+            languages = {"en": "english", "de": "Deutsch", "ru": "Русский", "fa": "فارسی"}
+            if user_text == "فارسی":
+                set_language(user_id, "fa")
+                user = get_user(user_id)
+                language = user["language"]
+                text = t(language, "The interface language has been changed to", ln = languages[language])
+            elif user_text == "English":
+                set_language(user_id, "en")
+                user = get_user(user_id)
+                language = user["language"]
+                text = t(language, "The interface language has been changed to", ln = languages[language])
+            elif user_text == "Deutsch":
+                set_language(user_id, "de")
+                user = get_user(user_id)
+                language = user["language"]
+                text = t(language, "The interface language has been changed to", ln = languages[language])
+            elif user_text == "Русский":
+                set_language(user_id, "ru")
+                user = get_user(user_id)
+                language = user["language"]
+                text = t(language, "The interface language has been changed to", ln = languages[language])
+            else:
+                text = t(language, "Please select one of the offered languages.")
+
+            context.user_data["mode"] = MODE_CREATE
+            msg = await update.message.reply_text(
+                text,
+                reply_markup=get_main_keyboard(language)
+            )
+            context.user_data["messages"].append(msg.message_id)
+
 
 
 ########################### ОБРАБОТКА НЕ-ТЕКСТОВЫХ СООБЩЕНИЙ #########################
@@ -1104,6 +1163,10 @@ def main() -> None:
 
     app.add_handler(
     CommandHandler("my_info", my_info_command)
+    )
+
+    app.add_handler(
+    CommandHandler("my_language", my_language_command)
     )
 
     '''
