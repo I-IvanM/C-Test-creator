@@ -668,7 +668,7 @@ async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE,):
 async def my_language_command(update: Update, context: ContextTypes.DEFAULT_TYPE,):
     context.user_data["mode"] = MODE_SETTINGS
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
     await update.message.reply_text(
             t(language,"Select your language."),
             reply_markup=get_my_language_keyboard(language)
@@ -860,17 +860,22 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     user_text = update.message.text
     quiz_state = context.user_data.get('quiz_state')
     mode = context.user_data.get('mode', MODE_CREATE)
+    user_id = update.effective_user.id
+
     language = (update.effective_user.language_code or "en")[:2]
     if language not in translations:
         language = "en"
 
     register_user(
-        update.effective_user.id,
+        user_id,
         update.effective_user.username or "",
         update.effective_user.first_name or "",
         language
     )
-    limits = refresh_user(update.effective_user.id)
+    limits = refresh_user(user_id)
+
+    user = get_user(user_id)
+    language = user["language"] or "en"
     
 
     # Кнопка переключения в режим "текст в C-Test"
@@ -970,7 +975,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             
             try:
                 output = process_ctest(user_text, language)
-                decrease_creation(update.effective_user.id)
+                decrease_creation(user_id)
                 await update.message.reply_text(output)
 
             except Exception as e:
@@ -1035,7 +1040,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                         t(language, "Error, contact support!")
                     )
                     return
-                decrease_generation(update.effective_user.id)
+                decrease_generation(user_id)
                 context.user_data["original_text"] = text
                 text = process_ctest(text, language)
                 await update.message.reply_text(
@@ -1062,7 +1067,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 chat_id=ADMIN_ID,
                 text=(
                     f"🔧 Обращение в поддержку\n\n"
-                    f"User ID: {update.effective_user.id}\n"
+                    f"User ID: {user_id}\n"
                     f"Username: @{update.effective_user.username or "no username"}\n"
                     f"Имя: {update.effective_user.first_name}\n\n"
                     f"{user_text}"
@@ -1074,7 +1079,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             context.user_data["messages"].append(msg.message_id)
 
         elif mode == MODE_SETTINGS:
-            user_id = update.effective_user.id
             languages = {"en": "english", "de": "Deutsch", "ru": "Русский", "fa": "فارسی"}
             if user_text == "فارسی":
                 set_language(user_id, "fa")
@@ -1111,7 +1115,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 ########################### ОБРАБОТКА НЕ-ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     context.user_data.setdefault("messages", [])
 
