@@ -61,19 +61,19 @@ TEXT = {
     "Switched to 'text to C-Test' mode.": ("✅ Zum Modus „Text in C-Test umwandeln“ gewechselt.\n"
                                            "Senden Sie Ihren Text und der Bot erstellt daraus einen C-Test!"),
     "Generation limit reached, purchase a subscription!": "Das Generierungslimit wurde erreicht. Kaufen Sie ein Abonnement!",
-    "Сreation limit reached, purchase a subscription!": "Das Umwandlungslimit wurde erreicht. Kaufen Sie ein Abonnement!",
+    "Creation limit reached, purchase a subscription!": "Das Umwandlungslimit wurde erreicht. Kaufen Sie ein Abonnement!",
     "Switched to Generation mode. In which language do you need the text?": ("🐙 Zum Generierungsmodus gewechselt.\n\n"
                                                                              "In welcher Sprache benötigen Sie den Text?\n"
                                                                              "Wählen Sie eine der vorgeschlagenen Optionen oder geben Sie Ihre eigene Sprache ein."),
     "You have returned to the main menu.": "Sie sind zum Hauptmenü zurückgekehrt.\n",
     "What level should the C-Test be": "Welches Niveau soll der C-Test haben (A1, A2, B1, B2, C1)?",
     "Do you have any wishes?": "Haben Sie Wünsche zum Text?",
-    "Great, it's generating!": ("Perfekt, der C-Test wird erstellt!\n",
+    "Great, it's generating!": ("Perfekt, der C-Test wird erstellt!\n"
                                 "{lang}"
                                 "{level}"
                                 "{wishes}"
                                 ),
-    "Error, contact support!": ("Ein Fehler ist aufgetreten. Bitte wenden Sie sich an den Support!\n\n",
+    "Error, contact support!": ("Ein Fehler ist aufgetreten. Bitte wenden Sie sich an den Support!\n\n"
                                 "/support"
                                 "{mode}"
                                 "{quiz_state}"

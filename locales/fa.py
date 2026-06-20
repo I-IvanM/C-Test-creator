@@ -61,7 +61,7 @@ TEXT = {
     "Switched to 'text to C-Test' mode.": ("✅ به حالت «متن به C-Test» تغییر کرد.\n"
                                            "متن خود را ارسال کنید تا ربات آن را به C-Test تبدیل کند!"),
     "Generation limit reached, purchase a subscription!": "سقف مجاز تولید به پایان رسیده است. لطفاً اشتراک تهیه کنید!",
-    "Сreation limit reached, purchase a subscription!": "به سقف تبدیل رسیده‌اید، اشتراک بخرید!",
+    "Creation limit reached, purchase a subscription!": "به سقف تبدیل رسیده‌اید، اشتراک بخرید!",
     "Switched to Generation mode. In which language do you need the text?": ("🐙 به حالت تولید تغییر کرد.\n\n"
                                                                              "متن را به چه زبانی نیاز دارید؟\n"
                                                                              "یکی از گزینه‌ها را انتخاب کنید یا زبان را تایپ کنید."),

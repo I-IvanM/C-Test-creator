@@ -61,19 +61,19 @@ TEXT = {
     "Switched to 'text to C-Test' mode.": ("✅ Переключено в режим \"текст в C-Test\".\n"
                                            "Отправьте ваш текст — бот превратит его в C-Test!"),
     "Generation limit reached, purchase a subscription!": "Лимит генераций исчерпан, купите подписку!",
-    "Сreation limit reached, purchase a subscription!": "Лимит преобразований исчерпан, купите подписку!",
+    "Creation limit reached, purchase a subscription!": "Лимит преобразований исчерпан, купите подписку!",
     "Switched to Generation mode. In which language do you need the text?": ("🐙 Переключено в режим Генерации.\n\n"
                                                                              "На каком языке нужен текст?\n" 
                                                                              "Выберите из предложенных или введите с клавиатуры."),
     "You have returned to the main menu.": "Вы вернулись в главное меню\n",
     "What level should the C-Test be": "Какого уровня должен быть C-Test (A1, A2, B1, B2, C1)?",
     "Do you have any wishes?": "Есть ли у Вас пожелания к тексту?",
-    "Great, it's generating!": ("Отлично, генерируется!\n",
+    "Great, it's generating!": ("Отлично, генерируется!\n"
                                 "{lang}"
                                 "{level}"
                                 "{wishes}"
                                 ),
-    "Error, contact support!": ("Ошибка, обратитесь в поддержку!\n\n",
+    "Error, contact support!": ("Ошибка, обратитесь в поддержку!\n\n"
                                 "/support"
                                 "{mode}"
                                 "{quiz_state}"

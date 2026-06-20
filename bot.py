@@ -623,6 +623,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if language not in translations:
         language = "en"
 
+    register_user(
+    update.effective_user.id,
+    update.effective_user.username,
+    update.effective_user.first_name,
+    language
+)
+
     welcome_text = (t(language, "starting text"))
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
@@ -968,7 +975,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if mode == MODE_CREATE:
             if limits["creations"] <= 0:
                 msg = await update.message.reply_text(
-                    t(language, "Сreation limit reached, purchase a subscription!")
+                    t(language, "Creation limit reached, purchase a subscription!")
                 )
                 context.user_data["messages"].append(msg.message_id)
                 return
