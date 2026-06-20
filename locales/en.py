@@ -45,7 +45,7 @@ TEXT = {
                                       "The subscription does not renew automatically.\n"
                                       "Any unused conversions and generations expire after 30 days.\n"
                                       "Payment is made using Telegram Stars:\n"
-                                      "1 month of subscription costs 100 Stars ≈ €2-3."),
+                                      "1 month of subscription costs 900 Stars ≈ € 20."),
     "Congratulations!": ("🎉🎉🎉 Congratulations! 🎉🎉🎉\n"
                          "You have successfully purchased a subscription for the C-Test Creator bot!\n"
                          "📚 We wish you successful preparation and easy exam tasks!\n\n"

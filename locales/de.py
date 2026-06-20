@@ -45,7 +45,7 @@ TEXT = {
                                       "Das Abonnement verlängert sich nicht automatisch.\n"
                                       "Nach Ablauf der 30 Tage verfallen alle ungenutzten Umwandlungen und Generierungen.\n"
                                       "Die Bezahlung erfolgt mit Telegram Stars:\n"
-                                      "1 Monat Abonnement kostet 100 Stars ≈ 2-3 €."),
+                                      "1 Monat Abonnement kostet 900 Stars ≈ 20 €."),
     "Congratulations!": ("🎉🎉🎉 Herzlichen Glückwunsch! 🎉🎉🎉\n"
                          "Sie haben erfolgreich ein Abonnement für den C-Test Creator Bot abgeschlossen!\n"
                          "📚 Wir wünschen Ihnen viel Erfolg bei der Vorbereitung und einfache Prüfungsaufgaben!\n\n"

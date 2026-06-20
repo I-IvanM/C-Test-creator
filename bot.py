@@ -39,7 +39,7 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "users.db")
 
 ADMIN_ID = 876824576 # Сюда идёт поддержка, этот пользователь может выдавать VIP
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD") # Пароль там, где он нужен
-SUBSCRIPTION_PRICE = 100 # Цена подписки
+SUBSCRIPTION_PRICE = 900 # Цена подписки
 
 # Переменные состояний
 MODE_CREATE = "create"
@@ -473,7 +473,7 @@ def check_subscription_expired(user_id: int):
         conn.commit()
         conn.close()
 
-# БАЗА ДАННЫХ, проверка бесплатной подписки (мб надо пополнить месячную норму)
+# БАЗА ДАННЫХ, проверка бесплатной подписки
 def check_free_month(user_id: int):
     user = get_user(user_id)
 
@@ -524,7 +524,7 @@ def refresh_user(user_id: int):
     }
 
 # БАЗА ДАННЫХ, выдача подписки
-def give_subscription(user_id: int):
+def give_subscription(user_id: int, days):
 
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -543,11 +543,11 @@ def give_subscription(user_id: int):
         current_expire = datetime.fromisoformat(row[0])
 
         if current_expire > now:
-            new_expire = current_expire + timedelta(days=30)
+            new_expire = current_expire + timedelta(days=days)
         else:
-            new_expire = now + timedelta(days=30)
+            new_expire = now + timedelta(days=days)
     else:
-        new_expire = now + timedelta(days=30)
+        new_expire = now + timedelta(days=days)
 
     cursor.execute("""
         UPDATE users
@@ -724,7 +724,7 @@ async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
     language = user["language"] or 'ru'
 
-    give_subscription(update.effective_user.id)
+    give_subscription(update.effective_user.id, 30)
     user = get_user(update.effective_user.id)
     date = user["subscription_expires_at"]
     if date != None:
@@ -856,7 +856,7 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
     payment = update.message.successful_payment
     amount = payment.total_amount
 
-    give_subscription(update.effective_user.id)
+    give_subscription(update.effective_user.id, 30)
     await update.message.reply_text(t(language, "Thank you, payment received!", amount=amount))
 
 
