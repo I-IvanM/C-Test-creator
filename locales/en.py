@@ -27,6 +27,7 @@ TEXT = {
                                               "/help – show this message\n"
                                               "/subscription – get information about the subscription\n"
                                               "/my_info – view information about your subscription\n"
+                                              "/my_language – change interface language\n"
                                               "/support – send a request to the bot's support team\n"),
     "Describe your problem.": ("🔧 Describe your problem.\n"
                                "You can also send a photo of the issue if necessary. All non-text messages are automatically forwarded to support."),

@@ -58,7 +58,7 @@ STATE_COMPLETED = "completed"
 def get_main_keyboard(language):
     keyboard = [
         [KeyboardButton(t(language, "text to c-test")), KeyboardButton(t(language, "generate"))],
-        [KeyboardButton(t(language, "help")), KeyboardButton(t(language, "Subscription")), KeyboardButton(t(language, "🌐"))]
+        [KeyboardButton(t(language, "help")), KeyboardButton(t(language, "Subscription")), KeyboardButton("🌐")]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 

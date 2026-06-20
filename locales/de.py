@@ -27,6 +27,7 @@ TEXT = {
                                               "/help – zeigt diese Nachricht an\n"
                                               "/subscription – Informationen zum Abonnement anzeigen\n"
                                               "/my_info – Informationen über Ihr Abonnement anzeigen\n"
+                                              "/my_language – ändern Sie die Sprache des Interface\n"
                                               "/support – eine Anfrage an den Bot-Support senden\n"),
     "Describe your problem.": ("🔧 Beschreiben Sie Ihr Problem.\n"
                                "Sie können bei Bedarf auch ein Foto des Problems senden. Alle Nicht-Text-Nachrichten werden automatisch an den Support weitergeleitet."),
