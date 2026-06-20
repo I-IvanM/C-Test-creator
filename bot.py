@@ -21,7 +21,12 @@ import sqlite3
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-load_dotenv()  # подтягивает переменные из файла .env
+load_dotenv()  # подтягиваем переменные из файла .env
+
+#Подтягиваем переводы
+from locales.ru import TEXT as RU
+from locales.fa import TEXT as FA
+translations = {"ru": RU, "fa": FA,}
 
 ################## ПЕРЕМЕННЫЕ ##################
 
@@ -47,65 +52,71 @@ STATE_COMPLETED = "completed"
 ###################### КЛАВИАТУРЫ #####################
 
 # Основная
-def get_main_keyboard():
+def get_main_keyboard(language):
     keyboard = [
-        [KeyboardButton("текст в C-Test"), KeyboardButton("Генерировать")],
-        [KeyboardButton("Справка"), KeyboardButton("Подписка")]
+        [KeyboardButton(t(language, "text to c-test")), KeyboardButton(t(language, "generate"))],
+        [KeyboardButton(t(language, "help")), KeyboardButton(t(language, "Subscription"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Вопрос про язык
-def get_language_keyboard():
+def get_language_keyboard(language):
     keyboard = [
-        [KeyboardButton("Английский"), KeyboardButton("Немецкий")],
-        [KeyboardButton("Вернуться в главное меню")]
+        [KeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 Englisch"), KeyboardButton("🇩🇪 Deutsch")],
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # A1 A2 B1 B2 C1 C2
-def get_A1C2_keyboard():
+def get_A1C2_keyboard(language):
     keyboard = [
         [KeyboardButton("A1"), KeyboardButton("B1"), KeyboardButton("C1")],
         [KeyboardButton("A2"), KeyboardButton("B2"), KeyboardButton("C2")],
-        [KeyboardButton("Вернуться в главное меню")]
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Нет пожеланий
-def get_no_wishes_keyboard():
+def get_no_wishes_keyboard(language):
     keyboard = [
-        [KeyboardButton("Нет пожеланий")],
-        [KeyboardButton("Вернуться в главное меню")]
+        [KeyboardButton(t(language, "No wishes"))],
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Вернуться в главное меню
-def get_menu_keyboard():
-    keyboard = [[KeyboardButton("Вернуться в главное меню")]]
+def get_menu_keyboard(language):
+    keyboard = [[KeyboardButton(t(language, "Return to the main menu"))]]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Смотреть ответы
-def get_answer_keyboard():
+def get_answer_keyboard(language):
     keyboard = [
-        [KeyboardButton("Смотреть ответы")],
-        [KeyboardButton("Вернуться в главное меню")]
+        [KeyboardButton(t(language, "View answers"))],
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 # Управление подпиской
-def get_subscription_keyboard():
+def get_subscription_keyboard(language):
     keyboard = [
-        [KeyboardButton("О подписке ℹ")],
-        [KeyboardButton("Моя подписка")],
-        [KeyboardButton("Купить подписку")],
-        [KeyboardButton("Вернуться в главное меню")]
+        [KeyboardButton(t(language, "About subscription"))],
+        [KeyboardButton(t(language, "My Subscription"))],
+        [KeyboardButton(t(language, "Buy a subscription"))],
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 ################# ФУНКЦИИ #################
 
+#Подстановка перевода
+def t(language, key, **kwargs):
+    if language not in translations:
+        language = "ru"
+    return translations[language][key].format(**kwargs)
+
 # превращение в c-test
-def process_ctest(user_text: str) -> str:
+def process_ctest(user_text: str, language) -> str:
 
     output = ""
     words = None
@@ -126,7 +137,7 @@ def process_ctest(user_text: str) -> str:
        words = user_text[pos + 1:].lstrip()
     else:
         # ERROR: No sentence-ending punctuation found
-        output = "В тексте должно быть несколько предложений, чтобы из него можно было составить C-Test."
+        output = t(language, "The text must contain several sentences ...")
         return output
 
     words = re.findall(r"\w+|[^\w\s]", words)
@@ -139,7 +150,7 @@ def process_ctest(user_text: str) -> str:
             if num >1 and not words[j].isdigit():
                 output += words[j][:num//2] + "___  "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif not words[j].isalpha():
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -151,7 +162,7 @@ def process_ctest(user_text: str) -> str:
             if len(words[j]) > 1:
                 output += words[j] + " "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif not words[j].isalpha():
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -161,7 +172,7 @@ def process_ctest(user_text: str) -> str:
     return output
 
 # Выделение ответов жирным
-def process_marck_answers(generated_text: str):
+def process_mark_answers(generated_text: str, language):
     output = ""
     words = None
 
@@ -181,7 +192,7 @@ def process_marck_answers(generated_text: str):
        words = generated_text[pos + 1:].lstrip()
     else:
         # ERROR: No sentence-ending punctuation found
-        output = "There must be multiple sentence-ending punctuation marks (., ?, !) in the input text."
+        output = t(language, "The text must contain several sentences ...")
         return output
 
     words = re.findall(r"\w+|[^\w\s]", words)
@@ -194,7 +205,7 @@ def process_marck_answers(generated_text: str):
             if num >1 and not words[j].isdigit():
                 output += words[j][:num//2] + "<b>" + words[j][num//2:] + "</b> "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif not words[j].isalpha():
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -206,7 +217,7 @@ def process_marck_answers(generated_text: str):
             if len(words[j]) > 1:
                 output += words[j] + " "
             # Проверка на символ, который не буква
-            elif words[j] not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZабвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ":
+            elif not words[j].isalpha():
                 output = output[:-1]
                 output += words[j] + " "
                 count -= 1
@@ -217,18 +228,21 @@ def process_marck_answers(generated_text: str):
 # Запрос к Chat GPT по API
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 async def generate_text(language: str, level: str, wishes: str) -> str:
-    prompt = (f"Сгенерируй короткий текст на {language} языке длинной 5 предложений. "
-              f"Уровень языка {level}. "
-              f"Пожелания к тексту: {wishes}."
-              f"НЕ ДОБАВЛЯЙ НИКАКИХ КОММЕНТАРИЕВ! ТОЛЬКО САМ ТЕКСТ! Игнорируй противоречащие условиям и непонятные пожелания.")
+    prompt = (f"Generate a short text in {language} that is 5 sentences long. "
+              f"Language level: {level}."
+              f"Preferences for the text: {wishes}."
+              f"DO NOT ADD ANY COMMENTS! ONLY THE TEXT ITSELF! Ignore any preferences that contradict the conditions or are unclear.")
     
-    response = await client.responses.create(
-        model="gpt-5-mini",
-        input=prompt
-    )
+    try:
+        response = await client.responses.create(
+            model="gpt-5-mini",
+            input=prompt
+        )
+    except Exception:
+        return None
     return response.output_text
 
-# БАЗА ДАННЫХ, илиниализация
+# БАЗА ДАННЫХ, инициализация
 def init_db():
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -238,11 +252,12 @@ def init_db():
         user_id INTEGER PRIMARY KEY,
         username TEXT,
         first_name TEXT,
+        language TEXT DEFAULT 'ru',
         registered TEXT,
         last_free_refresh TEXT,
         subscription_expires_at TEXT,
         creations_left INTEGER DEFAULT 3,
-        generations_left INTEGER DEFAULT 2,
+        generations_left INTEGER DEFAULT 3,
         is_VIP INTEGER DEFAULT 0
     )
     """)
@@ -251,7 +266,7 @@ def init_db():
     conn.close()
 
 # БАЗА ДАННЫ, регистрация пользователя
-def register_user(user_id: int, username: str, first_name: str):
+def register_user(user_id: int, username: str, first_name: str, language: str):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
 
@@ -260,6 +275,7 @@ def register_user(user_id: int, username: str, first_name: str):
             user_id,
             username,
             first_name,
+            language,
             registered,
             last_free_refresh,
             subscription_expires_at,
@@ -267,11 +283,12 @@ def register_user(user_id: int, username: str, first_name: str):
             generations_left,
             is_VIP
         )
-        VALUES (?, ?, ?, ?, ?, NULL, 3, 3, 0)
+        VALUES (?, ?, ?, ?, ?, ?, NULL, 3, 3, 0)
     """, (
         user_id,
         username,
         first_name,
+        language,
         datetime.now().isoformat(timespec="seconds"),
         datetime.now().isoformat(timespec="seconds")
     ))
@@ -301,12 +318,13 @@ def get_user(user_id: int):
         "user_id": row[0],
         "username": row[1],
         "first_name": row[2],
-        "registered": row[3],
-        "last_free_refresh": row [4],
-        "subscription_expires_at": row[5],
-        "creations_left": row[6],
-        "generations_left": row[7],
-        "is_VIP": bool(row[8]),
+        "language": row[3],
+        "registered": row[4],
+        "last_free_refresh": row[5],
+        "subscription_expires_at": row[6],
+        "creations_left": row[7],
+        "generations_left": row[8],
+        "is_VIP": bool(row[9]),
     }
 
 # БАЗА ДАННЫХ, напечатать пользователя
@@ -314,12 +332,13 @@ def print_user(user_id: int) -> str:
     user = get_user(user_id)
 
     if user is None:
-        return "Пользователь не найден"
+        return "User not found"
 
     return (
         f"ID: {user['user_id']}\n"
         f"Username: @{user['username']}\n"
         f"Имя: {user['first_name']}\n"
+        f"Язык: {user['language']}\n"
         f"Дата регистрации: {user['registered']}\n"
         f"Последнее обновление бесплатной {user['last_free_refresh']}\n"
         f"Подписка до: {user['subscription_expires_at']}\n"
@@ -356,7 +375,7 @@ def decrease_creation(user_id: int):
     conn.commit()
     conn.close()
 
-# БАЗА ДАННЫХ, довавление генераций
+# БАЗА ДАННЫХ, добавление генераций
 def add_generations(user_id: int, amount: int):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -384,7 +403,7 @@ def add_creations(user_id: int, amount: int):
     conn.commit()
     conn.close()
 
-# БАЗА ДАННЫХ, установка значения генераций
+# БАЗА ДАННЫХ, установка значения оставшихся генераций
 def set_generations(user_id: int, amount: int):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -398,7 +417,7 @@ def set_generations(user_id: int, amount: int):
     conn.commit()
     conn.close()
 
-# БАЗА ДАННЫХ, установка значений конвертаций
+# БАЗА ДАННЫХ, установка значений оставшихся конвертаций
 def set_creations(user_id: int, amount: int):
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -480,13 +499,17 @@ def check_free_month(user_id: int):
 def refresh_user(user_id: int):
     check_subscription_expired(user_id)
     check_free_month(user_id)
-    if get_user(user_id)["is_VIP"] == True:
+    user = get_user(user_id)
+
+    if user["is_VIP"]:
         set_creations(user_id, 57)
         set_generations(user_id, 57)
-    creations = get_user(user_id)['creations_left']
-    generations = get_user(user_id)['generations_left']
+        user = get_user(user_id)
 
-    return{'creations': creations, 'generations': generations}
+    return {
+        "creations": user["creations_left"],
+        "generations": user["generations_left"]
+    }
 
 # БАЗА ДАННЫХ, выдача подписки
 def give_subscription(user_id: int):
@@ -561,6 +584,20 @@ def set_vip(user_id: int, value: bool):
     conn.commit()
     conn.close()
 
+# БАЗА ДАННЫХ, сменить язык
+def set_language(user_id: int, language: str):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE users
+        SET language = ?
+        WHERE user_id = ?
+    """, (language, user_id))
+
+    conn.commit()
+    conn.close()
+
 # ПОДПИСКА, создание строки метки платежа
 def build_payload(user_id: int, purpose: str) -> str:
     return f"{purpose}:{user_id}"
@@ -570,14 +607,16 @@ def build_payload(user_id: int, purpose: str) -> str:
 
 # START
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = ("C-Tester \n"
-                    "Этот бот может превратить Ваш текст в C-Test или сгенерировать новый С-Test специально для Вас! \n"
-                    "Если у Вас есть вопросы, нажмите кнопку \"справка\" или введите команду /help.")
+    language = (update.effective_user.language_code or "ru")[:2]
+    if language not in translations:
+        language = "ru"
+
+    welcome_text = (t(language, "starting text"))
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
     context.user_data.setdefault("messages", [])
 
-    reply_markup=get_main_keyboard()
+    reply_markup=get_main_keyboard(language)
 
     msg = await update.message.reply_text(welcome_text, reply_markup=reply_markup)
     context.user_data["messages"].append(msg.message_id)
@@ -593,31 +632,24 @@ async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TY
 
 # КОМАНДА /help 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "Бот может работать в двух режимах:\n"
-        "1️⃣ «текст в C-Test» — Вы можете отправить любой текст, в котором есть несколько предложений и бот преобразует его в C-Test!\n"
-        "2️⃣ «Генерировать» — бот задаст Вам несколько вопросов и создаст новый C-Test специально для вас!\n\n"
-
-        "Используйте кнопки внизу экрана для переключения режимов.\n\n"
-
-        "📝 В режиме генерации бот задаёт несколько вопросов. Вы можете отвечать заготовленными кнопками или писать свои ответы.\n\n"
-
-        "🫡 Полный список команд бота:\n"
-        "/start – запускает бот заного\n"
-        "/help – вызывает это сообщение\n"
-        "/subscription – получиль информацию об условиях подписки\n"
-        "/my_info – получить информацию о состоянии моей подписки\n"
-        "/support – позволяет отправить запрос в тех. поддержку бота\n"
-    )
+    user = get_user(update.effective_user.id)
+    if user is None:
+        language = (update.effective_user.language_code or "ru")[:2]
+        if language not in translations:
+            language = "ru"
+    else:
+        language = user["language"] or 'ru'
+    text = (t(language, "The bot can operate in two modes: ..."))
     await update.message.reply_text(text)
 
-# Комнада /support
-async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Команда /support
+async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE,):
     context.user_data["mode"] = MODE_SUPPORT
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
     await update.message.reply_text(
-            "🔧 Опишите Вашу проблему.\n"
-            "Вы также может отправить фото возникшей проблемы, если считаете нужным. Все нетектовые сообщения автоматически перенаправляются в поддержку.",
-            reply_markup=get_menu_keyboard()
+            t(language,"Describe your problem."),
+            reply_markup=get_menu_keyboard(language)
         )
 
 # БАЗА ДАННЫХ, выдать всю информацию о пользователе /user
@@ -630,44 +662,38 @@ async def user_comand(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
     date = user["subscription_expires_at"]
+    language = user["language"] or 'ru'
 
     if date != None:
         date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
-        status = f"активна до {date}"
+        status = t(language, "active until", date=date)
     else:
-        status = "не активна"
+        status = t(language, "inactive")
 
-    text = (
-        f"Подписка {status}\n\n"
-        f"Осталось преобразований: {user['creations_left']}\n"
-        f"Осталось генераций: {user['generations_left']}\n\n"
-    )
+    creations_left = user['creations_left']
+    generations_left = user['generations_left']
 
-    if user['is_VIP'] == 1:
-        text = (f"🎩 Вы VIP пользователь, Вам доступны неограниченные возможности преобразования и генерации с-тестов!\n\n{text}")
+    text = (t(language, "Subscription, Conversions remaining, Generations remaining", status=status, creations_left=creations_left, generations_left=generations_left))
 
-    msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard())
+    if user['is_VIP']:
+        text = t(language, "You are a VIP user", text=text)
+    msg = await update.message.reply_text(text, reply_markup=get_subscription_keyboard(language))
     context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, рассказ о ней /subscription
 async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
 
-    text = (
-        "Подписка включает:\n\n"
-        "• 100 преобразований текста в C-Test\n"
-        "• 100 генераций новых C-Test\n\n"
-        "Cрок действия 30 дней.\n"
-        "Подписка не продляется автоматически.\n"
-        "По истечении 30 дней все неизрасходыванные генерации и преобразования сгорают.\n"
-        "Оплата производится при помощи Telegram Stars:\n"
-        "1 месяц подписки стоит 100 звёзд ≈ 2-3 €."
-    )
+    text = (t(language, "The subscription includes:..."))
 
     msg = await update.message.reply_text(text)
     context.user_data["messages"].append(msg.message_id)
 
 # ПОДПИСКА, выдать /give_sub
 async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
 
     give_subscription(update.effective_user.id)
     user = get_user(update.effective_user.id)
@@ -675,33 +701,31 @@ async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if date != None:
         date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
 
-
-    await update.message.reply_text(
-        "🎉🎉🎉 Поздравляем! 🎉🎉🎉\n"
-        "Вы оформили подписку на C-Test creator бота!\n"
-        "📚 Мы желаем Вам хорошей подготовки и простых заданий на экзамене!\n\n"
-        f"Подписка активна до {date}"
-    )
+    await update.message.reply_text(t(language, "Congratulations!", date=date))
 
 # ПОДПИСКА, обнулить /reset_sub
 async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
 
     reset_subscription(update.effective_user.id)
 
     msg = await update.message.reply_text(
-        "Подписка сброшена."
+        t(language, "Subscription reset.")
     )
     context.user_data["messages"].append(msg.message_id)
     context.user_data["messages"].append(update.message.message_id)
 
 # ПОДПИСКА, выдать / забрать VIP
 async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
 
     args = context.args
 
     if len(args) != 3:
         await update.message.reply_text(
-            "Отправьте команду в формте:\n/VIP пароль user_id True|False"
+            "Отправьте команду в формате:\n/VIP пароль user_id True|False"
         )
         return
 
@@ -712,7 +736,7 @@ async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if update.effective_user.id != ADMIN_ID:
-        msg = await update.message.reply_text("Вы не администратор.")
+        msg = await update.message.reply_text(t(language, "You are not an administrator."))
         context.user_data["messages"].append(msg.message_id)
         context.user_data["messages"].append(update.message.message_id)
         return
@@ -744,13 +768,16 @@ async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Оплата
 async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int) -> None:
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
+
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    payload = build_payload(user_id, "donate")
+    payload = build_payload(user_id, "subscription")
 
-    title = "Оплата подписки"
-    description = f"Подписка на C-Test crator: {amount} ⭐ || 1 месяц, 100 преобразований, 100 генераций"
-    prices = [LabeledPrice(label="Донат", amount=amount)]
+    title = t(language, "Subscription payment")
+    description = t(language, "C-Test Creator subscription: 1 month, 100 conversions, 100 generations", amount=amount)
+    prices = [LabeledPrice(label="Subscription payment", amount=amount)]
 
     await context.bot.send_invoice(
         chat_id=chat_id,
@@ -763,20 +790,25 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int) -
     )
 
 # Донат
+'''
 async def donate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
+
     args = context.args
 
     if not args or not args[0].isdigit():
-        await update.message.reply_text("Введите команду в формате: /donate <количество звёзд>")
+        await update.message.reply_text(t(language, "Enter the command in the format: /donate <number of stars>"))
         return
 
     amount = int(args[0])
 
     if amount < 1:
-        await update.message.reply_text("Количество звёзд должно быть не меньше 1.")
+        await update.message.reply_text(t(language, "The number of stars must be at least 1."))
         return
 
     await pay(update, context, amount)
+'''
 
 # ПОДПИСКА, выставление счёта
 async def buy_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -789,15 +821,15 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
 # Подтверждение оплаты
 async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
+    
     payment = update.message.successful_payment
     amount = payment.total_amount
 
-    await update.message.reply_text(
-        f"Спасибо, платёж {amount} ⭐ получен!\n"
-        "Если что-то пошло не так, вы можете обратить в поддержку с помощью команды /support"
-    )
-
     give_subscription(update.effective_user.id)
+    await update.message.reply_text(t(language, "Thank you, payment received!", amount=amount))
+
 
 
 ########################## ОБРАБОТКА ВХОДЯЩИХ ТЕКСТОВЫХ СООБЩЕНИЙ #########################
@@ -806,32 +838,36 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     user_text = update.message.text
     quiz_state = context.user_data.get('quiz_state')
     mode = context.user_data.get('mode', MODE_CREATE)
+    language = (update.effective_user.language_code or "ru")[:2]
+    if language not in translations:
+        language = "ru"
 
     register_user(
         update.effective_user.id,
-        update.effective_user.username or "–",
-        update.effective_user.first_name or "–"
+        update.effective_user.username or "",
+        update.effective_user.first_name or "",
+        language
     )
     limits = refresh_user(update.effective_user.id)
+    
 
     # Кнопка переключения в режим "текст в C-Test"
-    if user_text == "текст в C-Test":
+    if user_text == t(language, "text to c-test"):
         context.user_data["messages"].append(update.message.message_id)
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
         msg = await update.message.reply_text(
-            "✅ Переключено в режим \"текст в C-Test\".\n"
-            "Отправьте ваш текст — бот превратит его в C-Test!",
-            reply_markup=get_main_keyboard()
+            t(language, "Switched to 'text to C-Test' mode."),
+            reply_markup=get_main_keyboard(language)
         )
         context.user_data["messages"].append(msg.message_id)
 
     # Кнопка переключения в режим генерации
-    elif user_text == "Генерировать":
+    elif user_text == t(language, "generate"):
         if limits["generations"] <= 0:
                 msg = await update.message.reply_text(
-                "Лимит генераций исчерпан, купите подписку!"
-                )
+                    t(language, "Generation limit reached, purchase a subscription!")
+                    )
                 context.user_data["messages"].append(msg.message_id)
                 return
         
@@ -841,15 +877,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data["messages"].append(update.message.message_id)
 
         msg = await update.message.reply_text(
-            "🐙 Переключено в режим Генерации.\n\n"
-            "На каком языке нужен текст?\n" 
-            "Выберите из предложенных или введите с клавиатуры.",
-            reply_markup=get_language_keyboard()
+            t(language, "Switched to Generation mode. In which language do you need the text?"),
+            reply_markup=get_language_keyboard(language)
         )
         context.user_data["messages"].append(msg.message_id)
 
     # Кнопка вернуться в главное меню
-    elif user_text == "Вернуться в главное меню":
+    elif user_text == t(language, "Return to the main menu"):
         context.user_data["messages"].append(update.message.message_id)
         context.user_data['mode'] = MODE_CREATE
         context.user_data['quiz_state'] = None
@@ -860,40 +894,40 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             update.effective_chat.id,
             context
         )
-        context.user_data["messages"] = []
+        context.user_data["messages"].clear()
 
         msg = await update.message.reply_text(
-            "Вы вернулись в главное меню\n",
-            reply_markup=get_main_keyboard()
+            t(language, "You have returned to the main menu."),
+            reply_markup=get_main_keyboard(language)
         )
         context.user_data["messages"].append(msg.message_id)
 
     # Кнопка помощь
-    elif user_text == "Справка":
+    elif user_text == t(language, "help"):
         context.user_data["messages"].append(update.message.message_id)
         await help_command(update, context)
 
     # Кнопка смотреть ответы
-    elif user_text == "Смотреть ответы":
+    elif user_text == t(language, "View answers"):
         context.user_data["messages"].append(update.message.message_id)
         if "original_text" not in context.user_data:
             return
         text = context.user_data["original_text"]
-        text = process_marck_answers(text)
+        text = process_mark_answers(text, language)
         await update.message.reply_text(
         text,
-        reply_markup=get_main_keyboard(),
+        reply_markup=get_main_keyboard(language),
         parse_mode="HTML")
 
-    elif user_text == "Подписка" or user_text == "Моя подписка":
+    elif user_text == t(language, "Subscription") or user_text == t(language, "My Subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await my_info_command(update, context)
 
-    elif user_text == "Купить подписку":
+    elif user_text == t(language, "Buy a subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await buy_sub_command(update, context)
 
-    elif user_text == "О подписке ℹ":
+    elif user_text == t(language, "About subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await subscription_command (update, context)
 
@@ -903,13 +937,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if mode == MODE_CREATE:
             if limits["creations"] <= 0:
                 msg = await update.message.reply_text(
-                    "Лимит преобразований исчерпан, купите подписку!"
+                    t(language, "Сreation limit reached, purchase a subscription!")
                 )
                 context.user_data["messages"].append(msg.message_id)
                 return
             
             try:
-                output = process_ctest(user_text)
+                output = process_ctest(user_text, language)
                 decrease_creation(update.effective_user.id)
                 await update.message.reply_text(output)
 
@@ -925,20 +959,20 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             if quiz_state == STATE_QUESTION_1:
                 answers['language'] = user_text
-                text = "Какого уровня должен быть C-Test (A1, A2, B1, B2, C1)?"
+                text = t(language, "What level should the C-Test be")
                 context.user_data["quiz_state"] = STATE_QUESTION_2
                 msg = await update.message.reply_text(
                     text,
-                    reply_markup=get_A1C2_keyboard())
+                    reply_markup=get_A1C2_keyboard(language))
                 context.user_data["messages"].append(msg.message_id)
 
             elif quiz_state == STATE_QUESTION_2:
                 answers['level'] = user_text
-                text = "Есть ли у Вас пожелания к тексту?"
+                text = t(language, "Do you have any wishes?")
                 context.user_data["quiz_state"] = STATE_QUESTION_3
                 msg = await update.message.reply_text(
                     text,
-                    reply_markup=get_no_wishes_keyboard())
+                    reply_markup=get_no_wishes_keyboard(language))
                 context.user_data["messages"].append(msg.message_id)
 
             elif quiz_state == STATE_QUESTION_3:
@@ -951,16 +985,17 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     context
                 )
                 context.user_data["messages"] = []
-                # Отправка нового сообения
+                # Отправка нового сообения    
                 text = (
-                    f"Отлично, генерируется!\n"
-                    f"{answers['language']}\n"
-                    f"{answers['level']}\n"
-                    f"{answers['wishes']}"
+                    t(language, "Great, it's generating!",
+                      lang=answers['language'],
+                      level = answers['level'],
+                      wishes = answers['wishes']
+                    )
                 )
                 msg = await update.message.reply_text(
                     text,
-                    reply_markup=get_answer_keyboard())
+                    reply_markup=get_answer_keyboard(language))
                 context.user_data["messages"].append(update.message.message_id)
                 # Печатает...
                 await context.bot.send_chat_action(
@@ -969,28 +1004,32 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 )
                 # Генерация текста
                 text = await (generate_text(answers['language'], answers['level'], answers['wishes']))
+                if text is None:
+                    await update.message.reply_text(
+                        t(language, "Error, contact support!")
+                    )
+                    return
                 decrease_generation(update.effective_user.id)
                 context.user_data["original_text"] = text
-                text = process_ctest(text)
+                text = process_ctest(text, language)
                 await update.message.reply_text(
                     text,
-                    reply_markup=get_answer_keyboard())
+                    reply_markup=get_answer_keyboard(language))
                 
             elif quiz_state == STATE_COMPLETED:
                 context.user_data["mode"] = MODE_CREATE
                 context.user_data["quiz_state"] = None
 
             else:
+                mode = context.user_data['mode']
+                quiz_state = context.user_data['quiz_state']
                 text = (
-                    f"Ошибка, обратитесь в поддержку!\n\n"
-                    f"/support"
-                    f"{context.user_data['mode']}\n"
-                    f"{context.user_data['quiz_state']}"
-                    f"{await user_comand()}"
+                    t(language, "Error, contact support!",
+                      mode=mode, quiz_state=quiz_state)
                 )
                 await update.message.reply_text(
                 text,
-                reply_markup=get_menu_keyboard())
+                reply_markup=get_menu_keyboard(language))
 
         elif mode == MODE_SUPPORT:
             await context.bot.send_message(
@@ -1004,7 +1043,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 )
             )
             msg = await update.message.reply_text(
-                "Сообщение отправлено в поддержку."
+                t(language, "The message has been sent to support.")
             )
             context.user_data["messages"].append(msg.message_id)
 
@@ -1012,6 +1051,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 ########################### ОБРАБОТКА НЕ-ТЕКСТОВЫХ СООБЩЕНИЙ #########################
 async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = get_user(update.effective_user.id)
+    language = user["language"] or 'ru'
 
     context.user_data.setdefault("messages", [])
 
@@ -1034,7 +1075,7 @@ async def handle_non_text(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     )
 
     msg = await update.message.reply_text(
-        "Ваше сообщение было переслано в поддержку."
+        t(language, "Your message has been forwarded to support.")
     )
 
     context.user_data["messages"].append(msg.message_id)
@@ -1087,9 +1128,11 @@ def main() -> None:
         CommandHandler("subscription", subscription_command)
     )
 
+    '''
     app.add_handler(
         CommandHandler("donate", donate_command)
     )
+    '''
 
     app.add_handler(
         PreCheckoutQueryHandler(precheckout_callback)
