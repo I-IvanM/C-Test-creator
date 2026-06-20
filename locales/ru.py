@@ -69,14 +69,14 @@ TEXT = {
     "What level should the C-Test be": "Какого уровня должен быть C-Test (A1, A2, B1, B2, C1)?",
     "Do you have any wishes?": "Есть ли у Вас пожелания к тексту?",
     "Great, it's generating!": ("Отлично, генерируется!\n"
-                                "{lang}"
-                                "{level}"
-                                "{wishes}"
+                                "{lang}\n"
+                                "{level}\n"
+                                "{wishes}\n"
                                 ),
     "Error, contact support!": ("Ошибка, обратитесь в поддержку!\n\n"
-                                "/support"
-                                "{mode}"
-                                "{quiz_state}"
+                                "/support\n"
+                                "{mode}\n"
+                                "{quiz_state}\n"
                                 ),
     "Contacting Support": "🔧 Обращение в поддержку\n\n",
     "Please select one of the offered languages.": "Пожалуйста, выберите из предложенных языков.",

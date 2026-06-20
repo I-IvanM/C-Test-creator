@@ -69,14 +69,14 @@ TEXT = {
     "What level should the C-Test be": "سطح C-Test چه باشد؟ (A1، A2، B1، B2، C1)",
     "Do you have any wishes?": "آیا درخواست یا ترجیح خاصی دارید؟",
     "Great, it's generating!": ("عالی! در حال تولید است!\n"
-                                "{lang}"
-                                "{level}"
-                                "{wishes}"
+                                "{lang}\n"
+                                "{level}\n"
+                                "{wishes}\n"
                                 ),
     "Error, contact support!": ("خطا رخ داده است، لطفاً با پشتیبانی تماس بگیرید!\n\n"
-                                "/support"
-                                "{mode}"
-                                "{quiz_state}"
+                                "/support\n"
+                                "{mode}\n"
+                                "{quiz_state}\n"
                                 ),
     "Contacting Support": "🔧 ارتباط با پشتیبانی\n\n",
     "The interface language has been changed to": "زبان رابط کاربری به {ln} تغییر یافته است.",
