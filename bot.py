@@ -664,6 +664,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (t(language, "starting text"))
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
+    context.user_data.setdefault("messages", [])
     context.user_data["messages"] = []
 
     reply_markup=get_main_keyboard(language)
