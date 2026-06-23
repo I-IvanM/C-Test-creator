@@ -665,7 +665,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['mode'] = MODE_CREATE
     context.user_data['quiz_state'] = None
     context.user_data.setdefault("messages", [])
-    context.user_data["messages"] = []
+    context.user_data["messages"].clear()
 
     reply_markup=get_main_keyboard(language)
 
@@ -674,8 +674,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["messages"].append(update.message.message_id)
 
 # Удаление сообщений из списка context.user_data["messages"]
-async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
-                for i in list:
+async def delete_listed_messages(messages, chat_id, context: ContextTypes.DEFAULT_TYPE):
+                for i in messages:
                     try:
                         await context.bot.delete_message(chat_id, message_id=i)
                     except Exception:
@@ -1108,7 +1108,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     update.effective_chat.id,
                     context
                 )
-                context.user_data["messages"] = []
+                context.user_data["messages"].clear()
                 # Отправка нового сообения    
                 text = (
                     t(language, "Great, it's generating!",
@@ -1200,12 +1200,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             context.user_data["mode"] = MODE_CREATE
             # Удаление сообщений из списка
-            async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
-                for i in list:
-                    try:
-                        await context.bot.delete_message(chat_id, message_id=i)
-                    except Exception:
-                        pass
+            await delete_listed_messages(
+                context.user_data["messages"],
+                user_id,
+                context
+            )
             # Отправка нового сообщения
             msg = await update.message.reply_text(
                 text,
