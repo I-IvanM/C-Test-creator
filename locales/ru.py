@@ -60,7 +60,7 @@ TEXT = {
     "Subscription reset.": "Подписка сброшена.",
     "You are not an administrator.": "Вы не администратор.",
     "Subscription payment": "Оплата подписки",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "Подписка на C-Test creator: {amount} ⭐ || 1 месяц, {generations} преобразований, {generations} генераций",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "Подписка на C-Test creator: {amount} ⭐ || {days} дней, {generations} преобразований, {generations} генераций",
     "Enter the command in the format: /donate <number of stars>": "Введите команду в формате: /donate <количество звёзд>",
     "The number of stars must be at least 1.": "Количество звёзд должно быть не меньше 1.",
     "Thank you, payment received!": ("Спасибо, платёж {amount} ⭐ получен!\n"

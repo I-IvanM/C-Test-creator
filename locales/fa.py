@@ -60,7 +60,7 @@ TEXT = {
     "Subscription reset.": "اشتراک بازنشانی شد.",
     "You are not an administrator.": "شما مدیر نیستید.",
     "Subscription payment": "پرداخت اشتراک",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "اشتراک C-Test Creator: {amount} ⭐ || یک ماه، {generations} تبدیل، {generations} تولید",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "اشتراک C-Test Creator: {amount} ⭐ || {days} روز، {generations} تبدیل، {generations} نسل",
     "Enter the command in the format: /donate <number of stars>": "دستور را به این صورت وارد کنید: /donate <تعداد ستاره‌ها>",
     "The number of stars must be at least 1.": "تعداد ستاره‌ها باید حداقل 1 باشد.",
     "Thank you, payment received!": ("سپاسگزاریم! پرداخت {amount} ⭐ دریافت شد!\n"

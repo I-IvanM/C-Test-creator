@@ -129,7 +129,8 @@ def get_subscription_keyboard(language):
 def get_buy_subscription_keyboard(language):
     keyboard = [
         [KeyboardButton(t(language, "buy 30 days subscription", amount30 = SUBSCRIPTION_PRICE_30))],
-        [KeyboardButton(t(language, "buy 7 days subscription", amount7 = SUBSCRIPTION_PRICE_7))]
+        [KeyboardButton(t(language, "buy 7 days subscription", amount7 = SUBSCRIPTION_PRICE_7))],
+        [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
@@ -644,9 +645,14 @@ def build_payload(user_id: int, purpose: str) -> str:
 
 # START
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    language = (update.effective_user.language_code or "en")[:2]
-    if language not in translations:
-        language = "en"
+    user = get_user(update.effective_user.id)
+
+    if user:
+        language = user["language"]
+    else:
+        language = (update.effective_user.language_code or "en")[:2]
+        if language not in translations:
+            language = "en"
 
     register_user(
     update.effective_user.id,
@@ -841,7 +847,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int, d
     payload = build_payload(user_id, f"subscription_{days}")
 
     title = t(language, "Subscription payment")
-    description = t(language, "C-Test Creator subscription: 1 month, 100 conversions, 100 generations", amount=amount,generations = generations, )
+    description = t(language, "C-Test Creator subscription: 1 month, 100 conversions, 100 generations", days=days, amount=amount,generations = generations, )
     prices = [LabeledPrice(label="Subscription payment", amount=amount)]
 
     await context.bot.send_invoice(
@@ -921,9 +927,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     mode = context.user_data.get('mode', MODE_CREATE)
     user_id = update.effective_user.id
 
-    language = (update.effective_user.language_code or "en")[:2]
-    if language not in translations:
-        language = "en"
+    user = get_user(update.effective_user.id)
+    if user:
+        language = user["language"]
+    else:
+        language = (update.effective_user.language_code or "en")[:2]
+        if language not in translations:
+            language = "en"
 
     register_user(
         user_id,

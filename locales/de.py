@@ -60,7 +60,7 @@ TEXT = {
     "Subscription reset.": "Das Abonnement wurde zurückgesetzt.",
     "You are not an administrator.": "Sie sind kein Administrator.",
     "Subscription payment": "Abonnement bezahlen",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator Abonnement: {amount} ⭐ | 1 Monat, {generations} Umwandlungen, {generations} Generierungen",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator Abonnement: {amount} ⭐ || {days} Tage, {generations} Umwandlungen, {generations} Generierungen",
     "Enter the command in the format: /donate <number of stars>": "Geben Sie den Befehl im Format ein: /donate <Anzahl der Stars>",
     "The number of stars must be at least 1.": "Die Anzahl der Stars muss mindestens 1 betragen.",
     "Thank you, payment received!": ("Vielen Dank! Ihre Zahlung über {amount} ⭐ wurde erhalten!\n"
