@@ -991,9 +991,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 update.effective_chat.id,
                 context
             )
-            context.user_data["messages"].clear()
         except:
             pass
+        context.user_data["messages"].clear()
 
         msg = await update.message.reply_text(
             t(language, "You have returned to the main menu."),
