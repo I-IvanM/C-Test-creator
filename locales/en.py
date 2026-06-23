@@ -10,6 +10,10 @@ TEXT = {
     "My Subscription": "My Subscription",
     "About subscription": "About subscription ℹ",
     "Buy a subscription": "Buy a subscription",
+    "Select a plan": ("Select a subscription plan:\n"
+                      "● 30 days, 100 generations, 100 transformations – {amount30} stars\n"
+                      "● 7 days, 20 generations, 20 transformations – {amount7} stars\n"
+                      ),
     "The text must contain several sentences ...": "The text must contain several sentences so that a C-Test can be created from it.",
     "starting text": ("C-Tester \n"
                       "This bot can turn your text into a C-Test or generate a brand new C-Test just for you! \n"
@@ -38,6 +42,8 @@ TEXT = {
                                                                    "Conversions remaining: {creations_left}\n"
                                                                    "Generations remaining: {generations_left}\n\n"),
     "You are a VIP user": "🎩 You are a VIP user. You have unlimited access to C-Test conversion and generation!\n\n{text}",
+    "buy 30 days subscription": "Buy a 30-day subscription ({amount30} stars)",
+    "buy 7 days subscription": "Buy a one-week subscription ({amount7} stars)",
     "The subscription includes:...": ("The subscription includes:\n\n"
                                       "• 100 text-to-C-Test conversions\n"
                                       "• 100 new C-Test generations\n\n"
@@ -46,6 +52,7 @@ TEXT = {
                                       "Any unused conversions and generations expire after 30 days.\n"
                                       "Payment is made using Telegram Stars:\n"
                                       "1 month of subscription costs 900 Stars ≈ € 20."),
+    "Unknown payment amount.": "An error occurred. It seems an incorrect number of stars was sent. Please contact support: /support",
     "Congratulations!": ("🎉🎉🎉 Congratulations! 🎉🎉🎉\n"
                          "You have successfully purchased a subscription for the C-Test Creator bot!\n"
                          "📚 We wish you successful preparation and easy exam tasks!\n\n"
@@ -53,7 +60,7 @@ TEXT = {
     "Subscription reset.": "Subscription has been reset.",
     "You are not an administrator.": "You are not an administrator.",
     "Subscription payment": "Subscription payment",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator subscription: {amount} ⭐ | 1 month, 100 conversions, 100 generations",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator subscription: {amount} ⭐ | 1 month, {generations} conversions, {generations} generations",
     "Enter the command in the format: /donate <number of stars>": "Enter the command in the following format: /donate <number of stars>",
     "The number of stars must be at least 1.": "The number of Stars must be at least 1.",
     "Thank you, payment received!": ("Thank you! Your payment of {amount} ⭐ has been received!\n"

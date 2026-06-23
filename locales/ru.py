@@ -10,6 +10,10 @@ TEXT = {
     "My Subscription": "Моя подписка",
     "About subscription": "О подписке ℹ",
     "Buy a subscription": "Купить подписку",
+    "Select a plan": ("Выберите план подписки:\n"
+                      "● 30 дней, 100 генераций, 100 преобразований – {amount30} звёзд\n"
+                      "● 7 дней, 20 генераций, 20 преобразований – {amount7} звёзд\n"
+                      ),
     "The text must contain several sentences ...": "В тексте должно быть несколько предложений, чтобы из него можно было составить C-Test.",
     "starting text": ("C-Tester \n"
                       "Этот бот может превратить Ваш текст в C-Test или сгенерировать новый С-Test специально для Вас! \n"
@@ -46,6 +50,9 @@ TEXT = {
                                       "По истечении 30 дней все неизрасходованные генерации и преобразования сгорают.\n"
                                       "Оплата производится при помощи Telegram Stars:\n"
                                       "1 месяц подписки стоит 900 звёзд ≈ 20 €."),
+    "buy 30 days subscription": "Купить подписку на 30 дней ({amount30} звёзд)",
+    "buy 7 days subscription": "Купить подписку на неделю ({amount7} звёзд)",
+    "Unknown payment amount.": "Возникла ошибка. Кажется, было отправлено неверное количество звёзд. Обратитесь в поддержку: /support",
     "Congratulations!": ("🎉🎉🎉 Поздравляем! 🎉🎉🎉\n"
                          "Вы оформили подписку на C-Test creator бота!\n"
                          "📚 Мы желаем Вам хорошей подготовки и простых заданий на экзамене!\n\n"
@@ -53,7 +60,7 @@ TEXT = {
     "Subscription reset.": "Подписка сброшена.",
     "You are not an administrator.": "Вы не администратор.",
     "Subscription payment": "Оплата подписки",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "Подписка на C-Test creator: {amount} ⭐ || 1 месяц, 100 преобразований, 100 генераций",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "Подписка на C-Test creator: {amount} ⭐ || 1 месяц, {generations} преобразований, {generations} генераций",
     "Enter the command in the format: /donate <number of stars>": "Введите команду в формате: /donate <количество звёзд>",
     "The number of stars must be at least 1.": "Количество звёзд должно быть не меньше 1.",
     "Thank you, payment received!": ("Спасибо, платёж {amount} ⭐ получен!\n"

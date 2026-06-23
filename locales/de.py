@@ -10,6 +10,10 @@ TEXT = {
     "My Subscription": "Mein Abonnement",
     "About subscription": "Über das Abonnement ℹ",
     "Buy a subscription": "Abonnement kaufen",
+    "Select a plan": ("Wählen Sie ein Abonnement aus:\n"
+                      "● 30 Tage, 100 Generationen, 100 Transformationen – {amount30} Sterne\n"
+                      "● 7 Tage, 20 Generationen, 20 Transformationen – {amount7} Sterne\n"
+                      ),
     "The text must contain several sentences ...": "Der Text muss mehrere Sätze enthalten, damit daraus ein C-Test erstellt werden kann.",
     "starting text": ("C-Tester \n"
                       "Dieser Bot kann Ihren Text in einen C-Test umwandeln oder einen neuen C-Test speziell für Sie erstellen! \n"
@@ -38,6 +42,8 @@ TEXT = {
                                                                    "Verbleibende Umwandlungen: {creations_left}\n"
                                                                    "Verbleibende Generierungen: {generations_left}\n\n"),
     "You are a VIP user": "🎩 Sie sind ein VIP-Benutzer. Ihnen stehen unbegrenzte Umwandlungen und Generierungen von C-Tests zur Verfügung!\n\n{text}",
+    "buy 30 days subscription": "ein 30-Tage-Abonnement ({amount30} Sterne)",
+    "buy 7 days subscription": "ein Wochenabonnement ({amount7} Sterne)",
     "The subscription includes:...": ("Das Abonnement beinhaltet:\n\n"
                                       "• 100 Umwandlungen von Texten in C-Tests\n"
                                       "• 100 Generierungen neuer C-Tests\n\n"
@@ -46,6 +52,7 @@ TEXT = {
                                       "Nach Ablauf der 30 Tage verfallen alle ungenutzten Umwandlungen und Generierungen.\n"
                                       "Die Bezahlung erfolgt mit Telegram Stars:\n"
                                       "1 Monat Abonnement kostet 900 Stars ≈ 20 €."),
+    "Unknown payment amount.": "Es ist ein Fehler aufgetreten. Anscheinend wurde die falsche Anzahl an Sternen gesendet. Bitte kontaktieren Sie den Support: /support",
     "Congratulations!": ("🎉🎉🎉 Herzlichen Glückwunsch! 🎉🎉🎉\n"
                          "Sie haben erfolgreich ein Abonnement für den C-Test Creator Bot abgeschlossen!\n"
                          "📚 Wir wünschen Ihnen viel Erfolg bei der Vorbereitung und einfache Prüfungsaufgaben!\n\n"
@@ -53,7 +60,7 @@ TEXT = {
     "Subscription reset.": "Das Abonnement wurde zurückgesetzt.",
     "You are not an administrator.": "Sie sind kein Administrator.",
     "Subscription payment": "Abonnement bezahlen",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator Abonnement: {amount} ⭐ | 1 Monat, 100 Umwandlungen, 100 Generierungen",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "C-Test Creator Abonnement: {amount} ⭐ | 1 Monat, {generations} Umwandlungen, {generations} Generierungen",
     "Enter the command in the format: /donate <number of stars>": "Geben Sie den Befehl im Format ein: /donate <Anzahl der Stars>",
     "The number of stars must be at least 1.": "Die Anzahl der Stars muss mindestens 1 betragen.",
     "Thank you, payment received!": ("Vielen Dank! Ihre Zahlung über {amount} ⭐ wurde erhalten!\n"

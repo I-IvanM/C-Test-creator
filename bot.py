@@ -39,7 +39,20 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "users.db")
 
 ADMIN_ID = 876824576 # Сюда идёт поддержка, этот пользователь может выдавать VIP
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD") # Пароль там, где он нужен
-SUBSCRIPTION_PRICE = 900 # Цена подписки
+
+SUBSCRIPTION_PRICE_30 = 900 # Цена подписки
+SUBSCRIPTION_PRICE_7 = 200 # Цена подписки
+
+SUBSCRIPTION_PLANS = {
+    SUBSCRIPTION_PRICE_30: {
+        "days": 30,
+        "generations": 100,
+    },
+    SUBSCRIPTION_PRICE_7: {
+        "days": 7,
+        "generations": 20,
+    },
+}
 
 # Переменные состояний
 MODE_CREATE = "create"
@@ -51,6 +64,9 @@ STATE_QUESTION_1 = "question_1"
 STATE_QUESTION_2 = "question_2"
 STATE_QUESTION_3 = "question_3"
 STATE_COMPLETED = "completed"
+
+if BOT_TOKEN is None:
+    raise RuntimeError("Может быть проблема с env?")
 
 ###################### КЛАВИАТУРЫ #####################
 
@@ -110,6 +126,13 @@ def get_subscription_keyboard(language):
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
+def get_buy_subscription_keyboard(language):
+    keyboard = [
+        [KeyboardButton(t(language, "buy 30 days subscription", amount30 = SUBSCRIPTION_PRICE_30))],
+        [KeyboardButton(t(language, "buy 7 days subscription", amount7 = SUBSCRIPTION_PRICE_7))]
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
 # Смена языков
 def get_my_language_keyboard(language):
     keyboard = [
@@ -125,7 +148,7 @@ def get_my_language_keyboard(language):
 def t(language, key, **kwargs):
     if language not in translations:
         language = "en"
-    return translations[language][key].format(**kwargs)
+    return translations[language].get(key, key).format(**kwargs)
 
 # превращение в c-test
 def process_ctest(user_text: str, language) -> str:
@@ -152,7 +175,7 @@ def process_ctest(user_text: str, language) -> str:
         output = t(language, "The text must contain several sentences ...")
         return output
 
-    words = re.findall(r"\w+|[^\w\s]", words)
+    words = re.findall(r"[^\W\d_]+(?:['’][^\W\d_]+)*|[^\w\s]", words, re.UNICODE)
 
     count = 0
     for j in range(len(words)):
@@ -207,7 +230,7 @@ def process_mark_answers(generated_text: str, language):
         output = t(language, "The text must contain several sentences ...")
         return output
 
-    words = re.findall(r"\w+|[^\w\s]", words)
+    words = re.findall(r"[^\W\d_]+(?:['’][^\W\d_]+)*|[^\w\s]", words, re.UNICODE)
 
     count = 0
     for j in range(len(words)):
@@ -251,6 +274,7 @@ async def generate_text(language: str, level: str, wishes: str) -> str:
             input=prompt
         )
     except Exception:
+        print("Probleb by AI generation, возникла ошибка")
         return None
     return response.output_text
 
@@ -264,7 +288,7 @@ def init_db():
         user_id INTEGER PRIMARY KEY,
         username TEXT,
         first_name TEXT,
-        language TEXT DEFAULT 'ru',
+        language TEXT DEFAULT 'en',
         registered TEXT,
         last_free_refresh TEXT,
         subscription_expires_at TEXT,
@@ -514,9 +538,10 @@ def refresh_user(user_id: int):
     user = get_user(user_id)
 
     if user["is_VIP"]:
-        set_creations(user_id, 57)
-        set_generations(user_id, 57)
-        user = get_user(user_id)
+        if user["creations_left"] != 57:
+            set_creations(user_id, 57)
+            set_generations(user_id, 57)
+            user = get_user(user_id)
 
     return {
         "creations": user["creations_left"],
@@ -524,7 +549,7 @@ def refresh_user(user_id: int):
     }
 
 # БАЗА ДАННЫХ, выдача подписки
-def give_subscription(user_id: int, days):
+def give_subscription(user_id: int, days: int, generations: int):
 
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
@@ -561,8 +586,8 @@ def give_subscription(user_id: int, days):
     conn.commit()
     conn.close()
 
-    add_creations(user_id, 100)
-    add_generations(user_id, 100)
+    add_creations(user_id, generations)
+    add_generations(user_id, generations)
 
 # БАЗА ДАННЫХ, обнулить подписку
 def reset_subscription(user_id: int):
@@ -676,6 +701,12 @@ async def my_language_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data["mode"] = MODE_SETTINGS
     user = get_user(update.effective_user.id)
     language = user["language"] or 'en'
+    if user is None:
+        language = (update.effective_user.language_code or "en")[:2]
+        if language not in translations:
+            language = "en"
+    else:
+        language = user["language"] or "en"
     await update.message.reply_text(
             t(language,"Select your language."),
             reply_markup=get_my_language_keyboard(language)
@@ -690,8 +721,13 @@ async def user_comand(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ПОДПИСКА, выдача информации /my_info
 async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
+    if user is None:
+        language = (update.effective_user.language_code or "en")[:2]
+        if language not in translations:
+            language = "en"
+    else:
+        language = user["language"] or "en"
     date = user["subscription_expires_at"]
-    language = user["language"] or 'ru'
 
     if date != None:
         date = f"{date[:4]}.{date[5:7]}.{date[8:10]} {date[11:16]}"
@@ -712,7 +748,7 @@ async def my_info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ПОДПИСКА, рассказ о ней /subscription
 async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     text = (t(language, "The subscription includes:..."))
 
@@ -722,9 +758,9 @@ async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYP
 # ПОДПИСКА, выдать /give_sub
 async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
-    give_subscription(update.effective_user.id, 30)
+    give_subscription(update.effective_user.id, 30, 100)
     user = get_user(update.effective_user.id)
     date = user["subscription_expires_at"]
     if date != None:
@@ -735,7 +771,7 @@ async def give_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ПОДПИСКА, обнулить /reset_sub
 async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     reset_subscription(update.effective_user.id)
 
@@ -748,7 +784,7 @@ async def reset_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ПОДПИСКА, выдать / забрать VIP
 async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     args = context.args
 
@@ -796,16 +832,16 @@ async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # Оплата
-async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int) -> None:
+async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int, days: int, generations: int) -> None:
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    payload = build_payload(user_id, "subscription")
+    payload = build_payload(user_id, f"subscription_{days}")
 
     title = t(language, "Subscription payment")
-    description = t(language, "C-Test Creator subscription: 1 month, 100 conversions, 100 generations", amount=amount)
+    description = t(language, "C-Test Creator subscription: 1 month, 100 conversions, 100 generations", amount=amount,generations = generations, )
     prices = [LabeledPrice(label="Subscription payment", amount=amount)]
 
     await context.bot.send_invoice(
@@ -822,7 +858,7 @@ async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE, amount: int) -
 '''
 async def donate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
 
     args = context.args
 
@@ -839,9 +875,13 @@ async def donate_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await pay(update, context, amount)
 '''
 
-# ПОДПИСКА, выставление счёта
-async def buy_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await pay(update, context, SUBSCRIPTION_PRICE)
+# ПОДПИСКА, выставление счёта на 30 дней
+async def buy_sub_30_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await pay(update, context, SUBSCRIPTION_PRICE_30, 30, 100)
+
+# ПОДПИСКА, выставление счёта на 7 дней
+async def buy_sub_7_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await pay(update,context, SUBSCRIPTION_PRICE_7, 7, 20)
 
 # Подтверждение готовности (наличия)
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -851,12 +891,24 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 # Подтверждение оплаты
 async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = get_user(update.effective_user.id)
-    language = user["language"] or 'ru'
+    language = user["language"] or 'en'
     
     payment = update.message.successful_payment
     amount = payment.total_amount
 
-    give_subscription(update.effective_user.id, 30)
+    plan = SUBSCRIPTION_PLANS.get(amount)
+    if plan is None:
+        await update.message.reply_text(
+            t(language, "Unknown payment amount.")
+        )
+        return
+    
+    give_subscription(
+        update.effective_user.id,
+        plan["days"],
+        plan["generations"],
+    )
+
     await update.message.reply_text(t(language, "Thank you, payment received!", amount=amount))
 
 
@@ -953,18 +1005,38 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         reply_markup=get_main_keyboard(language),
         parse_mode="HTML")
 
+    # Информация о моей подписке
     elif user_text == t(language, "Subscription") or user_text == t(language, "My Subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await my_info_command(update, context)
 
+    # Выбор подписки
     elif user_text == t(language, "Buy a subscription"):
         context.user_data["messages"].append(update.message.message_id)
-        await buy_sub_command(update, context)
+        text = t(language, "Select a plan", amount30 = SUBSCRIPTION_PRICE_30, amount7 = SUBSCRIPTION_PRICE_7)
+        msg = await update.message.reply_text(
+        text,
+        reply_markup=get_buy_subscription_keyboard(language)
+        )
+        context.user_data["messages"].append(msg.message_id)
 
+
+    # Купить подписку на 30 дней
+    elif user_text == t(language, "buy 30 days subscription", amount30 = SUBSCRIPTION_PRICE_30):
+        context.user_data["messages"].append(update.message.message_id)
+        await buy_sub_30_command(update, context)
+
+    # Купить подписку на 7 дней
+    elif user_text == t(language, "buy 7 days subscription", amount7 = SUBSCRIPTION_PRICE_7):
+        context.user_data["messages"].append(update.message.message_id)
+        await buy_sub_7_command(update, context)
+
+    # О подписке
     elif user_text == t(language, "About subscription"):
         context.user_data["messages"].append(update.message.message_id)
         await subscription_command (update, context)
 
+    # Смена языка
     elif user_text == "🌐":
         context.user_data["messages"].append(update.message.message_id)
         await my_language_command (update, context)
@@ -1046,6 +1118,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     await update.message.reply_text(
                         t(language, "Error, contact support!")
                     )
+                    context.user_data["mode"] = MODE_CREATE
+                    context.user_data["quiz_state"] = None
                     return
                 decrease_generation(user_id)
                 context.user_data["original_text"] = text
@@ -1075,7 +1149,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 text=(
                     f"🔧 Обращение в поддержку\n\n"
                     f"User ID: {user_id}\n"
-                    f"Username: @{update.effective_user.username or "no username"}\n"
+                    f"Username: @{update.effective_user.username or 'no username'}\n"
                     f"Имя: {update.effective_user.first_name}\n\n"
                     f"{user_text}"
                 )
@@ -1111,6 +1185,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 text = t(language, "Please select one of the offered languages.")
 
             context.user_data["mode"] = MODE_CREATE
+            # Удаление сообщений из списка
+            async def delete_listed_messages(list, chat_id, context: ContextTypes.DEFAULT_TYPE):
+                for i in list:
+                    try:
+                        await context.bot.delete_message(chat_id, message_id=i)
+                    except Exception:
+                        pass
+            # Отправка нового сообщения
             msg = await update.message.reply_text(
                 text,
                 reply_markup=get_main_keyboard(language)

@@ -10,10 +10,14 @@ TEXT = {
     "My Subscription": "اشتراک من",
     "About subscription": "درباره اشتراک ℹ",
     "Buy a subscription": "خرید اشتراک",
+    "Select a plan": (":انتخاب طرح اشتراک\n"
+                      "۳۰ روز، ۱۰۰ نسل، ۱۰۰ تبدیل – {amount30} ستاره •\n"
+                      "۷ روز، ۲۰ نسل، ۲۰ تبدیل – {amount7} ستاره •\n"
+                      ),
     "The text must contain several sentences ...": "متن باید شامل چند جمله باشد تا بتوان از آن یک C-Test ساخت.",
     "starting text": ("C-Tester\n"
                       "این ربات می‌تواند متن شما را به C-Test تبدیل کند یا یک C-Test جدید مخصوص شما تولید کند!\n"
-                      "اگر سؤالی دارید، روی دکمه «راهنما» بزنید یا دستور /help را وارد کنید."),
+                      "اگر سؤالی دارید، روی دکمه «راهنما» بزنید یا دستور /help را وارد کنید.\n"),
     "The bot can operate in two modes: ...": ("ربات می‌تواند در دو حالت کار کند:\n"
                                               "1️⃣ «متن به C-Test» – می‌توانید هر متنی که شامل چند جمله باشد ارسال کنید و ربات آن را به C-Test تبدیل می‌کند!\n"
                                               "2️⃣ «تولید» – ربات چند سؤال از شما می‌پرسد و یک C-Test جدید مخصوص شما ایجاد می‌کند!\n\n"
@@ -38,6 +42,8 @@ TEXT = {
                                                                    "تبدیل‌های باقی‌مانده: {creations_left}\n"
                                                                    "تولیدهای باقی‌مانده: {generations_left}\n\n"),
     "You are a VIP user": "🎩 شما کاربر VIP هستید و از تبدیل و تولید نامحدود C-Test بهره‌مند هستید!\n\n{text}",
+    "buy 30 days subscription": "خرید اشتراک ۳۰ روزه ({amount30} ستاره)",
+    "buy 7 days subscription": "خرید اشتراک هفتگی ({amount7} ستاره)",
     "The subscription includes:...": ("اشتراک شامل موارد زیر است:\n\n"
                                       "• 100 تبدیل متن به C-Test\n"
                                       "• 100 تولید C-Test جدید\n\n"
@@ -46,6 +52,7 @@ TEXT = {
                                       "پس از پایان 30 روز، تمام تبدیل‌ها و تولیدهای استفاده‌نشده از بین می‌روند.\n"
                                       "پرداخت از طریق Telegram Stars انجام می‌شود:\n"
                                       "هزینه اشتراک ۱ ماهه ۹۰۰ ستاره ≈ ۲۰ یورو است."),
+    "Unknown payment amount.": "خطایی رخ داده است. به نظر می‌رسد تعداد ستاره‌های ارسال شده اشتباه بوده است. لطفا با پشتیبانی تماس بگیرید: /support",
     "Congratulations!": ("🎉🎉🎉 تبریک! 🎉🎉🎉\n"
                          "شما اشتراک ربات C-Test Creator را فعال کردید!\n"
                          "📚 برای شما آرزوی موفقیت در آمادگی و امتحان‌های آسان داریم!\n\n"
@@ -53,7 +60,7 @@ TEXT = {
     "Subscription reset.": "اشتراک بازنشانی شد.",
     "You are not an administrator.": "شما مدیر نیستید.",
     "Subscription payment": "پرداخت اشتراک",
-    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "اشتراک C-Test Creator: {amount} ⭐ || یک ماه، 100 تبدیل، 100 تولید",
+    "C-Test Creator subscription: 1 month, 100 conversions, 100 generations": "اشتراک C-Test Creator: {amount} ⭐ || یک ماه، {generations} تبدیل، {generations} تولید",
     "Enter the command in the format: /donate <number of stars>": "دستور را به این صورت وارد کنید: /donate <تعداد ستاره‌ها>",
     "The number of stars must be at least 1.": "تعداد ستاره‌ها باید حداقل 1 باشد.",
     "Thank you, payment received!": ("سپاسگزاریم! پرداخت {amount} ⭐ دریافت شد!\n"
