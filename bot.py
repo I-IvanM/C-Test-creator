@@ -985,12 +985,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['quiz_state'] = None
         
         # Удаление сообщений из списка
-        await delete_listed_messages(
-            context.user_data["messages"],
-            update.effective_chat.id,
-            context
-        )
-        context.user_data["messages"].clear()
+        try:
+            await delete_listed_messages(
+                context.user_data["messages"],
+                update.effective_chat.id,
+                context
+            )
+            context.user_data["messages"].clear()
+        except:
+            pass
 
         msg = await update.message.reply_text(
             t(language, "You have returned to the main menu."),
