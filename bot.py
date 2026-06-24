@@ -81,7 +81,7 @@ def get_main_keyboard(language):
 # Вопрос про язык
 def get_language_keyboard(language):
     keyboard = [
-        [KeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 Englisch"), KeyboardButton("🇩🇪 Deutsch")],
+        [KeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 English"), KeyboardButton("🇩🇪 Deutsch")],
         [KeyboardButton(t(language, "Return to the main menu"))]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
